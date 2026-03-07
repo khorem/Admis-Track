@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin Evenements</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const a = requireAdmin();
+      document.querySelector("#who").textContent = `${a.role} : ${a.email}`;
+      renderAdminEventsTableGrouped("#tbody");
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <div class="h1">Tableau des évènements</div>
+          <div class="muted" id="who"></div>
+        </div>
+      </div>
+      <div class="row">
+        <a class="btn success" href="admin-event-form.html?mode=create">+ Creer un evenement</a>
+        <a class="btn ghost" href="index.html">Accueil</a>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Evenements</h2>
+      <!-- <div class="muted">Les évènements sont differenciés par <b>type</b> (Forum, Salon, ?). Ouvrez un évènement pour voir les dossiers étudiants.</div> -->
+      <div class="hr"></div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Type</th><th>Titre</th><th>Date</th><th>Ville</th>
+            <th>Dossiers</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

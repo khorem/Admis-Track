@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Defraiement</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+  <script>
+    let CURRENT_P = null;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      requireStudent();
+      const eventId = getParam("event") || localStorage.getItem("selectedEventId");
+      if(!eventId) go("student-events.html");
+
+      CURRENT_P = getParticipationByEvent(eventId);
+      if(!CURRENT_P) go("student-events.html");
+
+      document.querySelector("#evt").textContent = `${CURRENT_P.event.title} Defraiement`;
+      document.querySelector("#type").value = CURRENT_P.defraiement.type || "Transports";
+      document.querySelector("#trajetA").value = CURRENT_P.defraiement.trajetA || "Point A";
+      document.querySelector("#trajetB").value = CURRENT_P.defraiement.trajetB || CURRENT_P.event.location;
+      document.querySelector("#distanceKmAR").value = CURRENT_P.defraiement.distanceKmAR || "";
+
+      const unlocked = isUnlockedByDate(CURRENT_P.event.date);
+      document.querySelector("#lock").style.display = unlocked ? "none" : "block";
+      document.querySelector("#form").style.display = unlocked ? "block" : "none";
+
+      // etat actuel (retour admin)
+      document.querySelector("#status").innerHTML = `
+        <div class="row" style="gap:8px">
+          <span class="badge pri">Statut defraiement: ${CURRENT_P.defraiement.status}</span>
+          ${CURRENT_P.defraiement.adminMessage ? `<span class="badge">Message: ${CURRENT_P.defraiement.adminMessage}</span>` : ``}
+        </div>
+      `;
+
+      refreshCalc();
+      toggleDistance();
+    });
+
+    function toggleDistance(){
+      const type = document.querySelector("#type").value;
+      document.querySelector("#distanceBox").style.display = (type === "Voiture") ? "block" : "none";
+      refreshCalc();
+    }
+
+    function refreshCalc(){
+      if(!CURRENT_P) return;
+      const type = document.querySelector("#type").value;
+      const dist = parseFloat(document.querySelector("#distanceKmAR").value || "0");
+
+      // Dejeuner : uniquement si evenement de type "Salon" ET presence "oui"
+      const lunch = (String(CURRENT_P.event.type||"").toLowerCase() === "salon" && CURRENT_P.presence.present === "oui") ? 10 : 0;
+
+      let car = 0;
+      if(type === "Voiture"){
+        if(dist > 0 && dist < 20) car = 10;
+        if(dist >= 20) car = 20;
+      }
+
+      const total = car + lunch;
+
+      document.querySelector("#calc").innerHTML = `
+        <div class="kv">
+          <div>Defraiement voiture</div><div><b>${car.toFixed(0)} €</b></div>
+          <div>Dejeuner (Salon)</div><div><b>${lunch.toFixed(0)} €</b></div>
+          <div>Total (cheque cadeau)</div><div><b>${total.toFixed(0)} €</b></div>
+        </div>
+      `;
+    }
+
+    function saveDefraiement(submit=false){
+      if(!CURRENT_P) return;
+
+      const type = document.querySelector("#type").value;
+      const trajetA = document.querySelector("#trajetA").value;
+      const trajetB = document.querySelector("#trajetB").value;
+      const distanceKmAR = document.querySelector("#distanceKmAR").value;
+
+      const file = document.querySelector("#justif").files[0]; // facultatif
+
+      CURRENT_P.defraiement.type = type;
+      CURRENT_P.defraiement.trajetA = trajetA;
+      CURRENT_P.defraiement.trajetB = trajetB;
+      CURRENT_P.defraiement.distanceKmAR = distanceKmAR;
+
+      // recalcul
+      const dist = parseFloat(distanceKmAR || "0");
+      const lunch = (String(CURRENT_P.event.type||"").toLowerCase() === "salon" && CURRENT_P.presence.present === "oui") ? 10 : 0;
+      let car = 0;
+      if(type === "Voiture"){
+        if(dist > 0 && dist < 20) car = 10;
+        if(dist >= 20) car = 20;
+      }
+      const total = car + lunch;
+      CURRENT_P.defraiement.lunchSalon = lunch;
+      CURRENT_P.defraiement.amountCalculated = String(total.toFixed(0));
+
+      const finalize = ()=>{
+        if(submit){
+          CURRENT_P.defraiement.status = "En attente";
+          CURRENT_P.status = "Defraiement demandé";
+        }
+        upsertParticipation(CURRENT_P);
+        alert(submit ? "Demande de defraiement envoyée (prototype)." : "Defraiement enregistré.");
+        go("student-status.html");
+      };
+
+      if(file){
+        fileToDataUrl(file, ({name, dataUrl})=>{
+          CURRENT_P.defraiement.justificatifName = name;
+          CURRENT_P.defraiement.justificatifDataUrl = dataUrl;
+          finalize();
+        });
+      }else{
+        finalize();
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <div class="h1">Fiche Defraiement</div>
+          <div class="muted" id="evt"></div>
+        </div>
+      </div>
+      <a class="btn ghost" href="student-events.html">Retour</a>
+    </div>
+
+    <div class="steps">
+      <div class="step">1. Inscription evenement</div>
+      <div class="step">2. Presence</div>
+      <div class="step active">3. Defraiement</div>
+    </div>
+
+    <div class="note" id="lock" style="margin-top:14px;display:none">
+      Cet ecran est debloqué <b>à partir de la date de l'évenement</b>.
+    </div>
+
+    <div class="card" id="form" style="margin-top:14px;display:none">
+      <div id="status"></div>
+      <div class="hr"></div>
+
+      <label>Type</label>
+      <select id="type" onchange="toggleDistance()">
+        <option>Transports</option>
+        <option>Voiture</option>
+        <option>Mixte</option>
+      </select>
+
+      <div class="grid grid-2">
+        <div>
+          <label>Trajet Point A</label>
+          <input class="input" id="trajetA" placeholder="Ex: Domicile / Campus" oninput="refreshCalc()"/>
+        </div>
+        <div>
+          <label>Trajet Point B</label>
+          <input class="input" id="trajetB" placeholder="Ex: Lieu de l'évenement" oninput="refreshCalc()"/>
+        </div>
+      </div>
+
+      <div id="distanceBox" style="display:none">
+        <label>Distance (km) A/R (uniquement si voiture)</label>
+        <input class="input" id="distanceKmAR" placeholder="Ex: 18" oninput="refreshCalc()"/>
+        <!-- <div class="small">Regle : voiture = 10? si &lt;20km A/R, 20? si ?20km A/R.</div> -->
+      </div>
+
+      <div class="hr"></div>
+      <h2>Calcul automatique (cheque cadeau)</h2>
+      <div class="muted">+ 10€ de dejeuner si l'évenement est un <b>Salon</b>et si vous etes <b>présent</b>.</div>
+      <div class="hr"></div>
+      <div id="calc"></div>
+
+      <div class="hr"></div>
+      <label>Justificatif (facultatif)</label>
+      <input class="input" type="file" id="justif" accept="image/*,.pdf"/>
+      <!-- <div class="small">Prototype : le fichier est stocke localement (base64).</div> -->
+
+      <div class="hr"></div>
+      <div class="row">
+        <button class="btn primary" onclick="saveDefraiement(false)">Enregistrer</button>
+        <button class="btn success" onclick="saveDefraiement(true)">Envoyer la demande de suivi</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

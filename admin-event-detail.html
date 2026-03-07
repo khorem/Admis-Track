@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin Detail Evenement</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      requireAdmin();
+      const eventId = getParam("event");
+      const evt = findEvent(eventId);
+      if(!evt) go("admin-events.html");
+
+      document.querySelector("#title").textContent = evt.title;
+      document.querySelector("#meta").textContent = `${evt.type}  ${evt.date}  ${evt.city}  ${evt.hours}`;
+      document.querySelector("#desc").textContent = evt.description;
+
+      document.querySelector("#contact").textContent = `${evt.contact?.name || ""}  ${evt.contact?.email || ""}  ${evt.contact?.phone || ""}`;
+      document.querySelector("#edit").href = `admin-event-form.html?mode=edit&event=${encodeURIComponent(evt.id)}`;
+
+      renderAdminEventParticipations("#students", evt.id);
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <div class="h1" id="title"></div>
+          <div class="muted" id="meta"></div>
+        </div>
+      </div>
+      <div class="row">
+        <a class="btn ghost" id="edit" href="#">Modifier</a>
+        <a class="btn ghost" href="admin-events.html">Retour</a>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h2>Details</h2>
+        <div class="muted" id="desc"></div>
+        <div class="hr"></div>
+        <div class="muted">Contact sur place</div>
+        <div id="contact" class="small"></div>
+      </div>
+
+      <div class="card">
+        <h2>Etudiants / Dossiers</h2>
+        <div id="students"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

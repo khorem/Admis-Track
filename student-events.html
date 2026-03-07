@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Evènements disponibles</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const s = requireStudent();
+      document.querySelector("#who").textContent = `${s.profile.name} • ${s.profile.email} • ${s.profile.formation} (${s.profile.year})`;
+      renderEventsListGrouped("#events");
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <div class="h1">Evènements disponibles</div>
+          <div class="muted" id="who"></div>
+        </div>
+      </div>
+      <div class="row">
+        <a class="btn ghost" href="student-status.html">Suivi défraiements</a>
+        <a class="btn ghost" href="index.html">Accueil</a>
+      </div>
+    </div>
+
+    <!-- <div class="note"> -->
+      <!-- Les évènements sont <b>groupés par type</b>. Après inscription, le dossier est transmis à Admissions. -->
+      <!-- Les écrans <b>Présence</b> et <b>Défraiement</b> se débloquent à partir de la <b>date de l’évènement</b>. -->
+    <!-- </div> -->
+
+    <div class="grid" id="events" style="margin-top:14px"></div>
+  </div>
+</body>
+</html>

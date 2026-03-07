@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Connexion étudiant</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", ()=>{
+      const profile = loadJSON("studentProfile", null);
+      if(profile?.email) document.querySelector("#email").value = profile.email;
+    });
+    function doLogin(){
+      const email = document.querySelector("#email").value.trim();
+      if(!email) return alert("Veuillez saisir un email.");
+      studentLogin(email);
+      // Si pas encore de profil => inscription
+      const profile = loadJSON("studentProfile", null);
+      if(!profile || profile.email !== email){
+        go("student-register.html");
+      }else{
+        go("student-events.html");
+      }
+    }
+    function goFirstRegistration(){
+      const email = document.querySelector("#email").value.trim();
+      if(!email) return alert("Veuillez saisir un email avant la premiere inscription.");
+      studentLogin(email);
+      go("student-register.html");
+    }
+  </script>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <div class="h1">Connexion étudiant</div>
+          <!-- <div class="muted">Prototype ? pas d?auth reelle</div> -->
+        </div>
+      </div>
+      <a class="btn ghost" href="index.html">Accueil</a>
+    </div>
+
+    <div class="card">
+      <label>Email</label>
+      <input class="input" id="email" placeholder="Ex: awa.kone@edu.esiee-it.fr" value="awa.kone@edu.esiee-it.fr"/>
+
+      <div class="hr"></div>
+      <button class="btn primary" onclick="doLogin()">Se connecter</button>
+
+      <div class="hr"></div>
+      <button class="btn ghost" onclick="goFirstRegistration()">Acceder a la première inscription</button>
+    </div>
+  </div>
+</body>
+</html>
