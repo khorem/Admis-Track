@@ -9,16 +9,22 @@
   <script>
     let CURRENT_P = null;
 
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
       requireStudent();
       const eventId = getParam("event") || localStorage.getItem("selectedEventId");
       if(!eventId) go("student-events.html");
 
+      await syncEvents();
       const evt = findEvent(eventId);
       if(!evt) go("student-events.html");
 
       const partId = getParam("part");
-      CURRENT_P = partId ? getParticipationById(partId) : getParticipationByEvent(eventId);
+      if(partId){
+        CURRENT_P = getParticipationById(partId) || await refreshParticipationById(partId);
+      }else{
+        await syncMyParticipations();
+        CURRENT_P = getParticipationByEvent(eventId);
+      }
 
       if(!CURRENT_P){
         const lockReason = getRegistrationClosedReason(evt);
@@ -26,7 +32,7 @@
           alert(lockReason);
           return go("student-events.html");
         }
-        CURRENT_P = startParticipation(eventId);
+        CURRENT_P = await startParticipation(eventId);
       }
 
       document.querySelector("#evt").textContent = `${CURRENT_P.event.title} - ${CURRENT_P.event.date} - ${CURRENT_P.event.city}`;
@@ -45,9 +51,10 @@
       `;
     });
 
-    function saveAndSubmit(){
+    async function saveAndSubmit(){
       if(!CURRENT_P) return go("student-events.html");
 
+      await syncEvents();
       const evt = findEvent(CURRENT_P.event.id);
       const lockReason = getRegistrationClosedReason(evt);
       if(lockReason){
@@ -55,20 +62,17 @@
         return;
       }
 
-      CURRENT_P.inscription.available = document.querySelector("#available").value;
-      CURRENT_P.inscription.roleWanted = document.querySelector("#roleWanted").value;
-      CURRENT_P.inscription.motivation = document.querySelector("#motivation").value;
-
-      CURRENT_P.status = "Soumis";
-      upsertParticipation(CURRENT_P);
-
-      pushAdminNotification(
-        "new_registration",
-        `${CURRENT_P.student.name} a soumis un dossier pour ${CURRENT_P.event.title}.`,
-        { partId: CURRENT_P.id, eventId: CURRENT_P.event.id, studentEmail: CURRENT_P.student.email }
-      );
-
-      go("student-confirmation.html?part=" + encodeURIComponent(CURRENT_P.id));
+      try{
+        CURRENT_P = await saveInscriptionStep(CURRENT_P.id, {
+          available: document.querySelector("#available").value,
+          roleWanted: document.querySelector("#roleWanted").value,
+          motivation: document.querySelector("#motivation").value,
+          submit: true
+        });
+        go("student-confirmation.html?part=" + encodeURIComponent(CURRENT_P.id));
+      }catch(err){
+        alert(err.message || "Erreur lors de la soumission du dossier.");
+      }
     }
   </script>
 </head>

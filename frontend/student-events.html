@@ -7,10 +7,16 @@
   <link rel="stylesheet" href="styles.css"/>
   <script defer src="app.js"></script>
   <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      const s = requireStudent();
-      document.querySelector("#who").textContent = `${s.profile.name} - ${s.profile.email} - ${s.profile.formation} (${s.profile.year})`;
-      renderEventsListGrouped("#events");
+    window.addEventListener("DOMContentLoaded", async () => {
+      try{
+        const s = requireStudent();
+        if(!s?.profile) return;
+        const profile = await syncCurrentStudentProfile();
+        document.querySelector("#who").textContent = `${profile.name} - ${profile.email} - ${profile.formation} (${profile.year})`;
+        await renderEventsListGrouped("#events");
+      }catch(err){
+        alert(err.message || "Erreur de chargement.");
+      }
     });
   </script>
 </head>
@@ -39,4 +45,3 @@
   </div>
 </body>
 </html>
-

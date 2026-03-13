@@ -7,10 +7,17 @@
   <link rel="stylesheet" href="styles.css"/>
   <script defer src="app.js"></script>
   <script>
-    window.addEventListener("DOMContentLoaded", ()=>{
+    window.addEventListener("DOMContentLoaded", async ()=>{
       const s = requireStudent();
-      document.querySelector("#who").textContent = `${s.profile.name} - ${s.profile.email}`;
-      render();
+      if(!s?.profile) return;
+      try{
+        const profile = await syncCurrentStudentProfile();
+        await syncMyParticipations();
+        document.querySelector("#who").textContent = `${profile.name} - ${profile.email}`;
+        render();
+      }catch(err){
+        alert(err.message || "Erreur de chargement du suivi.");
+      }
     });
 
     function render(){

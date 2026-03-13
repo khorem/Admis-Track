@@ -9,9 +9,10 @@
   <script>
     let EVT = null;
 
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
       requireAdmin();
       const eventId = getParam("event");
+      await syncEvents();
       EVT = findEvent(eventId);
       if(!EVT) go("admin-events.html");
 
@@ -27,16 +28,20 @@
       document.querySelector("#contact").textContent = `${EVT.contact?.name || ""} - ${EVT.contact?.email || ""} - ${EVT.contact?.phone || ""}`;
       document.querySelector("#edit").href = `admin-event-form.html?mode=edit&event=${encodeURIComponent(EVT.id)}`;
 
-      renderAdminEventParticipations("#students", EVT.id);
+      await renderAdminEventParticipations("#students", EVT.id);
     });
 
-    function removeEvent(){
+    async function removeEvent(){
       if(!EVT) return;
       const ok = window.confirm(`Supprimer l'evenement "${EVT.title}" ?`);
       if(!ok) return;
-      deleteEvent(EVT.id);
-      alert("Evenement supprime.");
-      go("admin-events.html");
+      try{
+        await deleteEvent(EVT.id);
+        alert("Evenement supprime.");
+        go("admin-events.html");
+      }catch(err){
+        alert(err.message || "Erreur lors de la suppression.");
+      }
     }
   </script>
 </head>

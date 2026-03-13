@@ -9,11 +9,12 @@
   <script>
     let CURRENT_P = null;
 
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
       requireStudent();
       const eventId = getParam("event") || localStorage.getItem("selectedEventId");
       if(!eventId) return go("student-events.html");
 
+      await syncMyParticipations();
       CURRENT_P = getParticipationByEvent(eventId);
       if(!CURRENT_P) return go("student-events.html");
 
@@ -24,14 +25,34 @@
       document.querySelector("#notes").value = CURRENT_P.presence.notes || "";
     });
 
-    function saveAndNext(){
+    async function saveAndNext(){
       if(!CURRENT_P) return;
-      CURRENT_P.presence.departFrom = document.querySelector("#departFrom").value.trim();
-      CURRENT_P.presence.departTime = document.querySelector("#departTime").value.trim();
-      CURRENT_P.presence.transport = document.querySelector("#transport").value;
-      CURRENT_P.presence.notes = document.querySelector("#notes").value.trim();
-      upsertParticipation(CURRENT_P);
-      go(`student-presence.html?event=${encodeURIComponent(CURRENT_P.event.id)}`);
+      try{
+        CURRENT_P = await savePresenceStep(CURRENT_P.id, {
+          present: CURRENT_P.presence.present || "non",
+          arrivedAt: CURRENT_P.presence.arrivedAt || "",
+          leftAt: CURRENT_P.presence.leftAt || "",
+          transport: document.querySelector("#transport").value,
+          departFrom: document.querySelector("#departFrom").value.trim(),
+          departTime: document.querySelector("#departTime").value.trim(),
+          notes: document.querySelector("#notes").value.trim(),
+          justificatifName: CURRENT_P.presence.justificatifName || "",
+          justificatifDataUrl: CURRENT_P.presence.justificatifDataUrl || "",
+          justificatifOwnerEmail: CURRENT_P.presence.justificatifOwnerEmail || CURRENT_P.student.email
+        });
+        go(`student-presence.html?event=${encodeURIComponent(CURRENT_P.event.id)}`);
+      }catch(err){
+        CURRENT_P.presence.departFrom = document.querySelector("#departFrom").value.trim();
+        CURRENT_P.presence.departTime = document.querySelector("#departTime").value.trim();
+        CURRENT_P.presence.transport = document.querySelector("#transport").value;
+        CURRENT_P.presence.notes = document.querySelector("#notes").value.trim();
+        upsertParticipationLocal(CURRENT_P);
+        if(String(err.message || "").toLowerCase().includes("debloquee")){
+          go(`student-presence.html?event=${encodeURIComponent(CURRENT_P.event.id)}`);
+          return;
+        }
+        alert(err.message || "Erreur lors de l'enregistrement de la logistique.");
+      }
     }
   </script>
 </head>

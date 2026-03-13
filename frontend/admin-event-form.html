@@ -10,8 +10,9 @@
     let MODE = "create";
     let EVT_ID = null;
 
-    window.addEventListener("DOMContentLoaded", ()=>{
+    window.addEventListener("DOMContentLoaded", async ()=>{
       requireAdmin();
+      await syncEvents();
       MODE = getParam("mode") || "create";
       EVT_ID = getParam("event");
 
@@ -39,8 +40,7 @@
       }
     });
 
-    function saveEvent(){
-      const events = getEvents();
+    async function saveEvent(){
       const startTime = document.querySelector("#startTime").value;
       const endTime = document.querySelector("#endTime").value;
       const cemail = document.querySelector("#cemail").value.trim();
@@ -82,19 +82,18 @@
         return alert("Format telephone contact invalide.");
       }
 
-      if(MODE === "create"){
-        data.id = nextEventId(events);
-        events.push(data);
-        setEvents(events);
-        alert("Evenement cree.");
-      }else{
-        const idx = events.findIndex(x=>x.id===EVT_ID);
-        if(idx<0) return go("admin-events.html");
-        events[idx] = data;
-        setEvents(events);
-        alert("Evenement modifie.");
+      try{
+        if(MODE === "create"){
+          await createEvent(data);
+          alert("Evenement cree.");
+        }else{
+          await updateEvent(EVT_ID, data);
+          alert("Evenement modifie.");
+        }
+        go("admin-events.html");
+      }catch(err){
+        alert(err.message || "Erreur lors de l'enregistrement de l'evenement.");
       }
-      go("admin-events.html");
     }
   </script>
 </head>

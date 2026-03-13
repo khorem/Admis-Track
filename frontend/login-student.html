@@ -9,23 +9,28 @@
   <script>
     window.addEventListener("DOMContentLoaded", ()=>{
       const profile = loadJSON("studentProfile", null);
+      const auth = loadJSON("studentAuth", null);
       if(profile?.email) document.querySelector("#email").value = profile.email;
+      else if(auth?.email) document.querySelector("#email").value = auth.email;
     });
-    function doLogin(){
+    async function doLogin(){
       const email = document.querySelector("#email").value.trim();
       if(!email) return alert("Veuillez saisir un email.");
-      studentLogin(email);
-      const profile = loadJSON("studentProfile", null);
-      if(!profile || profile.email !== email){
-        go("student-register.html");
-      }else{
-        go("student-events.html");
+      try{
+        const out = await studentLogin(email);
+        if(out.requiresRegistration){
+          go("student-register.html");
+        }else{
+          go("student-events.html");
+        }
+      }catch(err){
+        alert(err.message || "Erreur de connexion etudiant.");
       }
     }
     function goFirstRegistration(){
       const email = document.querySelector("#email").value.trim();
       if(!email) return alert("Veuillez saisir un email avant la premiere inscription.");
-      studentLogin(email);
+      saveJSON("studentAuth", { email: email.toLowerCase() });
       go("student-register.html");
     }
   </script>

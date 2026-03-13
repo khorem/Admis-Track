@@ -7,17 +7,21 @@
   <link rel="stylesheet" href="styles.css"/>
   <script defer src="app.js"></script>
   <script>
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
       const admin = requireAdmin();
       document.querySelector("#who").textContent = `${admin.email} - ${admin.role}`;
-      renderAdminTypeSummary("#typeSummary");
-      renderAdminNotifications("#notifications");
-      renderAdminEventsTableGrouped("#eventsBody");
+      await renderAdminTypeSummary("#typeSummary");
+      await renderAdminNotifications("#notifications");
+      await renderAdminEventsTableGrouped("#eventsBody");
     });
 
-    function clearNotificationsUI(){
-      clearAdminNotifications();
-      renderAdminNotifications("#notifications");
+    async function clearNotificationsUI(){
+      try{
+        await clearAdminNotifications();
+        await renderAdminNotifications("#notifications");
+      }catch(err){
+        alert(err.message || "Erreur lors de la suppression des notifications.");
+      }
     }
   </script>
 </head>

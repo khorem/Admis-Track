@@ -9,17 +9,29 @@
   <script>
     window.addEventListener("DOMContentLoaded", ()=>{
       const auth = loadJSON("studentAuth", null);
-      if(!auth) go("login-student.html");
+      if(!auth){
+        go("login-student.html");
+        return;
+      }
 
       const existing = loadJSON("studentProfile", null);
-      if(existing && existing.email === auth.email){
+      const session = loadJSON("studentSession", null);
+      const profileComplete = !!(
+        existing?.name &&
+        existing?.email &&
+        existing?.formation &&
+        existing?.campus &&
+        existing?.phone &&
+        existing?.year
+      );
+      if(session?.token && profileComplete && existing && existing.email === auth.email){
         go("student-events.html");
         return;
       }
       document.querySelector("#email").value = auth.email || "";
     });
 
-    function saveProfile(){
+    async function saveProfile(){
       const profile = {
         name: document.querySelector("#name").value.trim(),
         email: document.querySelector("#email").value.trim(),
@@ -42,10 +54,13 @@
         return alert("Format telephone invalide.");
       }
 
-      studentLogin(profile.email);
-      studentRegister(profile);
-      alert("Profil enregistre.");
-      go("student-events.html");
+      try{
+        await studentRegister(profile);
+        alert("Profil enregistre.");
+        go("student-events.html");
+      }catch(err){
+        alert(err.message || "Erreur lors de l'enregistrement du profil.");
+      }
     }
   </script>
 </head>

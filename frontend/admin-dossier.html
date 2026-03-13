@@ -9,10 +9,10 @@
   <script>
     let P = null;
 
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
       requireAdmin();
       const partId = getParam("part");
-      P = partId ? getParticipationById(partId) : null;
+      P = partId ? (getParticipationById(partId) || await refreshParticipationById(partId)) : null;
 
       if(!P) {
         document.querySelector("#wrap").innerHTML = `<div class="card"><div class="muted">Aucun dossier a afficher.</div></div>`;
@@ -48,21 +48,23 @@
       `;
     });
 
-    function saveAll(){
+    async function saveAll(){
       if(!P) return;
-
-      P.internal.confirmedBySchool = document.querySelector("#confirmed").value;
-      P.internal.managedBy = document.querySelector("#managedBy").value;
-      P.internal.internalComment = document.querySelector("#internalComment").value;
-      P.internal.amountValidated = document.querySelector("#amountValidated").value;
-      P.internal.ccDonnes = document.querySelector("#ccDonnes").value;
-
-      P.defraiement.status = document.querySelector("#defStatus").value;
-      P.defraiement.adminMessage = document.querySelector("#defMsg").value;
-
-      upsertParticipation(P);
-      alert("Enregistre (prototype).");
-      location.reload();
+      try{
+        P = await saveInternalStep(P.id, {
+          confirmedBySchool: document.querySelector("#confirmed").value,
+          managedBy: document.querySelector("#managedBy").value,
+          internalComment: document.querySelector("#internalComment").value,
+          amountValidated: document.querySelector("#amountValidated").value,
+          ccDonnes: document.querySelector("#ccDonnes").value,
+          defStatus: document.querySelector("#defStatus").value,
+          defMsg: document.querySelector("#defMsg").value
+        });
+        alert("Enregistre.");
+        location.reload();
+      }catch(err){
+        alert(err.message || "Erreur lors de l'enregistrement.");
+      }
     }
   </script>
 </head>

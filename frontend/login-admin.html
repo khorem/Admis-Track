@@ -6,6 +6,18 @@
   <title>Connexion Admin</title>
   <link rel="stylesheet" href="styles.css"/>
   <script defer src="app.js"></script>
+  <script>
+    async function doAdminLogin(){
+      const email = document.querySelector("#email").value.trim();
+      if(!email) return alert("Veuillez saisir un email.");
+      try{
+        await adminLogin(email);
+        go("admin-events.html");
+      }catch(err){
+        alert(err.message || "Erreur de connexion admin.");
+      }
+    }
+  </script>
 </head>
 <body>
   <div class="container">
@@ -27,10 +39,7 @@
       <input class="input" id="email" value="admissions@ecole.fr"/>
 
       <div class="hr"></div>
-      <button class="btn primary" onclick="
-        adminLogin(document.querySelector('#email').value);
-        go('admin-events.html');
-      ">Se connecter</button>
+      <button class="btn primary" onclick="doAdminLogin()">Se connecter</button>
     </div>
   </div>
 </body>

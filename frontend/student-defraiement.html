@@ -9,11 +9,12 @@
   <script>
     let CURRENT_P = null;
 
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
       requireStudent();
       const eventId = getParam("event") || localStorage.getItem("selectedEventId");
       if(!eventId) go("student-events.html");
 
+      await syncMyParticipations();
       CURRENT_P = getParticipationByEvent(eventId);
       if(!CURRENT_P) go("student-events.html");
 
@@ -83,7 +84,7 @@
       `;
     }
 
-    function saveDefraiement(submit=false){
+    async function saveDefraiement(submit=false){
       if(!CURRENT_P) return;
 
       const type = document.querySelector("#type").value;
@@ -110,25 +111,30 @@
       CURRENT_P.defraiement.lunchSalon = breakfast;
       CURRENT_P.defraiement.amountCalculated = String(total.toFixed(0));
 
-      const finalize = ()=>{
-        if(submit){
-          CURRENT_P.defraiement.status = "En attente";
-          CURRENT_P.status = "Defraiement demande";
+      try{
+        if(file){
+          const uploaded = await fileToDataUrlAsync(file);
+          CURRENT_P.defraiement.justificatifName = uploaded.name;
+          CURRENT_P.defraiement.justificatifDataUrl = uploaded.dataUrl;
+          CURRENT_P.defraiement.justificatifOwnerEmail = CURRENT_P.student.email;
         }
-        upsertParticipation(CURRENT_P);
+
+        CURRENT_P = await saveDefraiementStep(CURRENT_P.id, {
+          type,
+          trajetA,
+          trajetB,
+          distanceKmAR,
+          breakfastWanted,
+          submit,
+          justificatifName: CURRENT_P.defraiement.justificatifName || "",
+          justificatifDataUrl: CURRENT_P.defraiement.justificatifDataUrl || "",
+          justificatifOwnerEmail: CURRENT_P.defraiement.justificatifOwnerEmail || CURRENT_P.student.email
+        });
+
         alert(submit ? "Demande de defraiement envoyee." : "Defraiement enregistre.");
         go("student-status.html");
-      };
-
-      if(file){
-        fileToDataUrl(file, ({name, dataUrl})=>{
-          CURRENT_P.defraiement.justificatifName = name;
-          CURRENT_P.defraiement.justificatifDataUrl = dataUrl;
-          CURRENT_P.defraiement.justificatifOwnerEmail = CURRENT_P.student.email;
-          finalize();
-        });
-      }else{
-        finalize();
+      }catch(err){
+        alert(err.message || "Erreur lors de l'enregistrement du defraiement.");
       }
     }
   </script>
