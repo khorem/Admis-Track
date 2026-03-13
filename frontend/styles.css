@@ -38,6 +38,7 @@ body::before{
   clip-path:polygon(0 0,100% 0,100% 42%,0 100%);
   z-index:0;
 }
+
 body::after{
   content:"";
   position:fixed;

@@ -114,6 +114,7 @@ function clearAdminSession(){
   localStorage.removeItem(KEYS.adminNotifications);
 }
 
+
 // Reset all prototype data
 function clearAll(){
   Object.values(KEYS).forEach((k)=> localStorage.removeItem(k));
