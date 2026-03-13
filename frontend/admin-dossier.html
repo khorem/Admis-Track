@@ -41,9 +41,9 @@
           <div>Inscription</div><div>Dispo: ${P.inscription.available} - Role: ${P.inscription.roleWanted}</div>
           <div>Presence</div><div>Present: ${P.presence.present} - ${P.presence.arrivedAt} -> ${P.presence.leftAt}</div>
           <div>Transport</div><div>${P.presence.transport} - Depart: ${P.presence.departFrom || "-"}</div>
-          <div>Justificatif presence</div><div>${P.presence.justificatifName ? `<a href="${P.presence.justificatifDataUrl}" target="_blank">Voir (${P.presence.justificatifName})</a>` : "-"}</div>
-          <div>Defraiement</div><div>Total calcule: <b>${P.defraiement.amountCalculated || "-"} EUR</b> (cheque cadeau) - Dejeuner salon: ${P.defraiement.lunchSalon || 0} EUR</div>
-          <div>Justificatif defraiement</div><div>${P.defraiement.justificatifName ? `<a href="${P.defraiement.justificatifDataUrl}" target="_blank">Voir (${P.defraiement.justificatifName})</a>` : "- (facultatif)"}</div>
+          <div>Justificatif presence</div><div>${P.presence.justificatifName ? `<a href="${P.presence.justificatifDataUrl}" target="_blank">Voir (${P.presence.justificatifName})</a> - Proprietaire: ${P.presence.justificatifOwnerEmail || P.student.email}` : "-"}</div>
+          <div>Defraiement</div><div>Total calcule: <b>${P.defraiement.amountCalculated || "-"} EUR</b> (cheque cadeau) - Petit-dejeuner salon: ${P.defraiement.lunchSalon || 0} EUR</div>
+          <div>Justificatif defraiement</div><div>${P.defraiement.justificatifName ? `<a href="${P.defraiement.justificatifDataUrl}" target="_blank">Voir (${P.defraiement.justificatifName})</a> - Proprietaire: ${P.defraiement.justificatifOwnerEmail || P.student.email}` : "- (facultatif)"}</div>
         </div>
       `;
     });
@@ -70,7 +70,10 @@
   <div class="container" id="wrap">
     <div class="topbar">
       <div class="brand">
-        <div class="logo"></div>
+        <div class="brand-logos">
+          <img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/>
+          <img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/>
+        </div>
         <div>
           <div class="h1" id="h">Grande fiche</div>
           <div class="muted" id="sub"></div>
@@ -88,19 +91,19 @@
       <div class="card">
         <h2>Admissions - Validation</h2>
 
-        <label>Confirmé par l'école</label>
+        <label>Confirme par l'ecole</label>
         <select id="confirmed">
           <option value="non">Non</option>
           <option value="oui">Oui</option>
         </select>
 
-        <label>Action gerée par</label>
+        <label>Action geree par</label>
         <input class="input" id="managedBy" placeholder="Ex: Admissions"/>
 
         <label>Montant valide (EUR)</label>
         <input class="input" id="amountValidated" placeholder="Ex: 20"/>
 
-        <label>Chèque cadeau donné ?</label>
+        <label>Cheque cadeau donne ?</label>
         <select id="ccDonnes">
           <option value="non">Non</option>
           <option value="oui">Oui</option>
@@ -120,7 +123,7 @@
           <option>Refuse</option>
         </select>
 
-        <label>Message Admissions (visible étudiant)</label>
+        <label>Message admissions (visible etudiant)</label>
         <textarea id="defMsg" class="input" rows="3" placeholder="Ex: Accepte. Cheque cadeau disponible a l'accueil."></textarea>
 
         <div class="hr"></div>

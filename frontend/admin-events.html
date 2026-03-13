@@ -3,47 +3,79 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Admin Evenements</title>
+  <title>Admin - Evenements</title>
   <link rel="stylesheet" href="styles.css"/>
   <script defer src="app.js"></script>
   <script>
     window.addEventListener("DOMContentLoaded", () => {
-      const a = requireAdmin();
-      document.querySelector("#who").textContent = `${a.role} : ${a.email}`;
-      renderAdminEventsTableGrouped("#tbody");
+      const admin = requireAdmin();
+      document.querySelector("#who").textContent = `${admin.email} - ${admin.role}`;
+      renderAdminTypeSummary("#typeSummary");
+      renderAdminNotifications("#notifications");
+      renderAdminEventsTableGrouped("#eventsBody");
     });
+
+    function clearNotificationsUI(){
+      clearAdminNotifications();
+      renderAdminNotifications("#notifications");
+    }
   </script>
 </head>
 <body>
   <div class="container">
     <div class="topbar">
       <div class="brand">
-        <div class="logo"></div>
+        <div class="brand-logos">
+          <img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/>
+          <img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/>
+        </div>
         <div>
-          <div class="h1">Tableau des évènements</div>
+          <div class="h1">Admin - Pilotage des evenements</div>
           <div class="muted" id="who"></div>
         </div>
       </div>
       <div class="row">
-        <a class="btn success" href="admin-event-form.html?mode=create">+ Creer un evenement</a>
+        <a class="btn primary" href="admin-event-form.html?mode=create">Creer un evenement</a>
         <a class="btn ghost" href="index.html">Accueil</a>
       </div>
     </div>
 
-    <div class="card">
-      <h2>Evenements</h2>
-      <!-- <div class="muted">Les évènements sont differenciés par <b>type</b> (Forum, Salon, ?). Ouvrez un évènement pour voir les dossiers étudiants.</div> -->
-      <div class="hr"></div>
+    <div class="grid grid-2">
+      <div class="card">
+        <h2>Resume par type</h2>
+        <div class="hr"></div>
+        <div id="typeSummary"></div>
+      </div>
 
-      <table class="table">
-        <thead>
-          <tr>
-            <th>ID</th><th>Type</th><th>Titre</th><th>Date</th><th>Ville</th>
-            <th>Dossiers</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2>Notifications</h2>
+          <button class="btn ghost" onclick="clearNotificationsUI()">Vider</button>
+        </div>
+        <div class="hr"></div>
+        <div id="notifications"></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <h2>Liste des evenements</h2>
+      <div class="hr"></div>
+      <div style="overflow:auto">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Evenement</th>
+              <th>Date</th>
+              <th>Ville</th>
+              <th>Capacite</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="eventsBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </body>

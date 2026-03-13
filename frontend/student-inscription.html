@@ -1,54 +1,74 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Fiche Inscription Evenement</title>
+  <title>Fiche inscription evenement</title>
   <link rel="stylesheet" href="styles.css"/>
   <script defer src="app.js"></script>
   <script>
+    let CURRENT_P = null;
+
     window.addEventListener("DOMContentLoaded", () => {
       requireStudent();
       const eventId = getParam("event") || localStorage.getItem("selectedEventId");
       if(!eventId) go("student-events.html");
 
+      const evt = findEvent(eventId);
+      if(!evt) go("student-events.html");
+
       const partId = getParam("part");
-      let p = partId ? getParticipationById(partId) : getParticipationByEvent(eventId);
-      if(!p){
-        p = startParticipation(eventId);
+      CURRENT_P = partId ? getParticipationById(partId) : getParticipationByEvent(eventId);
+
+      if(!CURRENT_P){
+        const lockReason = getRegistrationClosedReason(evt);
+        if(lockReason){
+          alert(lockReason);
+          return go("student-events.html");
+        }
+        CURRENT_P = startParticipation(eventId);
       }
 
-      document.querySelector("#evt").textContent = `${p.event.title} ? ${p.event.date} ? ${p.event.city}`;
-      document.querySelector("#available").value = p.inscription.available || "oui";
-      document.querySelector("#roleWanted").value = p.inscription.roleWanted || "Participant";
-      document.querySelector("#motivation").value = p.inscription.motivation || "";
+      document.querySelector("#evt").textContent = `${CURRENT_P.event.title} - ${CURRENT_P.event.date} - ${CURRENT_P.event.city}`;
+      document.querySelector("#available").value = CURRENT_P.inscription.available || "oui";
+      document.querySelector("#roleWanted").value = CURRENT_P.inscription.roleWanted || "Participant";
+      document.querySelector("#motivation").value = CURRENT_P.inscription.motivation || "";
 
-      // Resume profil (fige)
       document.querySelector("#prof").innerHTML = `
         <div class="kv">
-          <div>Nom</div><div><b>${p.student.name}</b></div>
-          <div>Email</div><div>${p.student.email}</div>
-          <div>Formation</div><div>${p.student.formation} (${p.student.year})</div>
-          <div>Campus</div><div>${p.student.campus}</div>
-          <div>Telephone</div><div>${p.student.phone}</div>
+          <div>Nom</div><div><b>${CURRENT_P.student.name}</b></div>
+          <div>Email</div><div>${CURRENT_P.student.email}</div>
+          <div>Formation</div><div>${CURRENT_P.student.formation} (${CURRENT_P.student.year})</div>
+          <div>Campus</div><div>${CURRENT_P.student.campus}</div>
+          <div>Telephone</div><div>${CURRENT_P.student.phone}</div>
         </div>
       `;
     });
 
     function saveAndSubmit(){
-      const eventId = getParam("event") || localStorage.getItem("selectedEventId");
-      const p = getParticipationByEvent(eventId) || getParticipationById(getParam("part"));
-      if(!p) return go("student-events.html");
+      if(!CURRENT_P) return go("student-events.html");
 
-      p.inscription.available = document.querySelector("#available").value;
-      p.inscription.roleWanted = document.querySelector("#roleWanted").value;
-      p.inscription.motivation = document.querySelector("#motivation").value;
+      const evt = findEvent(CURRENT_P.event.id);
+      const lockReason = getRegistrationClosedReason(evt);
+      if(lockReason){
+        alert(lockReason);
+        return;
+      }
 
-      // Dossier envoye e Admissions des cette etape
-      p.status = "Soumis";
-      upsertParticipation(p);
+      CURRENT_P.inscription.available = document.querySelector("#available").value;
+      CURRENT_P.inscription.roleWanted = document.querySelector("#roleWanted").value;
+      CURRENT_P.inscription.motivation = document.querySelector("#motivation").value;
 
-      go("student-confirmation.html?part=" + encodeURIComponent(p.id));
+      CURRENT_P.status = "Soumis";
+      upsertParticipation(CURRENT_P);
+
+      pushAdminNotification(
+        "new_registration",
+        `${CURRENT_P.student.name} a soumis un dossier pour ${CURRENT_P.event.title}.`,
+        { partId: CURRENT_P.id, eventId: CURRENT_P.event.id, studentEmail: CURRENT_P.student.email }
+      );
+
+      go("student-confirmation.html?part=" + encodeURIComponent(CURRENT_P.id));
     }
   </script>
 </head>
@@ -56,7 +76,7 @@
   <div class="container">
     <div class="topbar">
       <div class="brand">
-        <div class="logo"></div>
+        <div class="brand-logos"><img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/><img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/></div>
         <div>
           <div class="h1">Inscription a un evenement</div>
           <div class="muted" id="evt"></div>
@@ -67,20 +87,20 @@
 
     <div class="steps">
       <div class="step active">1. Inscription evenement</div>
-      <div class="step">Presence</div>
-      <div class="step">Defraiement</div>
+      <div class="step">2. Presence</div>
+      <div class="step">3. Defraiement</div>
     </div>
 
     <div class="grid grid-2" style="margin-top:14px">
       <div class="card">
-        <h2>Profil (pre-rempli)</h2>
-        <div class="muted">Ces informations viennent de votre fiche profil et ne sont pas à ressaisir.</div>
+        <h2>Profil</h2>
+        <div class="muted">Informations de profil rattachees a votre dossier.</div>
         <div class="hr"></div>
         <div id="prof"></div>
       </div>
 
       <div class="card">
-        <h2>Choix pour l'événement</h2>
+        <h2>Choix pour l'evenement</h2>
 
         <label>Disponible</label>
         <select id="available">
@@ -88,19 +108,20 @@
           <option value="non">Non</option>
         </select>
 
-        <label>Role souhaité</label>
+        <label>Role souhaite</label>
         <select id="roleWanted">
           <option>Participant</option>
           <option>Ambassadeur</option>
         </select>
 
         <label>Motivation / Commentaire (facultatif)</label>
-        <textarea id="motivation" rows="5" class="input" placeholder="Ex: Je suis à l'aise pour presenter ma formation..."></textarea>
+        <textarea id="motivation" rows="5" class="input" placeholder="Votre motivation..."></textarea>
 
         <div class="hr"></div>
-        <button class="btn success" onclick="saveAndSubmit()">Envoyer le dossier e Admissions</button>
+        <button class="btn success" onclick="saveAndSubmit()">Envoyer le dossier a l'admission</button>
       </div>
     </div>
   </div>
 </body>
 </html>
+

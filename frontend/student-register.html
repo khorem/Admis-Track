@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Inscription Étudiant – Profil</title>
+  <title>Inscription etudiant - Profil</title>
   <link rel="stylesheet" href="styles.css"/>
   <script defer src="app.js"></script>
   <script>
@@ -13,7 +13,6 @@
 
       const existing = loadJSON("studentProfile", null);
       if(existing && existing.email === auth.email){
-        // profil déjà créé
         go("student-events.html");
         return;
       }
@@ -36,11 +35,16 @@
       if(!profile.name || !profile.email || !profile.formation || !profile.campus || !profile.phone || !profile.year){
         return alert("Veuillez remplir tous les champs obligatoires.");
       }
+      if(!isValidEmail(profile.email)){
+        return alert("Format email invalide.");
+      }
+      if(!isValidPhone(profile.phone)){
+        return alert("Format telephone invalide.");
+      }
 
-      // Keep auth aligned if user updates email on first registration.
       studentLogin(profile.email);
       studentRegister(profile);
-      alert("Profil enregistré (prototype).");
+      alert("Profil enregistre.");
       go("student-events.html");
     }
   </script>
@@ -49,10 +53,10 @@
   <div class="container">
     <div class="topbar">
       <div class="brand">
-        <div class="logo"></div>
+        <div class="brand-logos"><img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/><img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/></div>
         <div>
-          <div class="h1">Inscription Étudiant (1ère fois)</div>
-          <div class="muted">Fiche profil – ces informations seront conservées et réutilisées</div>
+          <div class="h1">Inscription etudiant (premiere fois)</div>
+          <div class="muted">Saisissez vos informations sans champ pre-rempli.</div>
         </div>
       </div>
       <a class="btn ghost" href="index.html">Accueil</a>
@@ -61,8 +65,8 @@
     <div class="card">
       <div class="grid grid-2">
         <div>
-          <label>Nom & Prénom</label>
-          <input class="input" id="name" placeholder="Ex: Awa Koné" value="Awa Koné"/>
+          <label>Nom et Prenom</label>
+          <input class="input" id="name" placeholder="Ex: Awa Kone"/>
         </div>
         <div>
           <label>Email</label>
@@ -73,35 +77,35 @@
       <div class="grid grid-2">
         <div>
           <label>Formation</label>
-          <input class="input" id="formation" placeholder="Ex: Master ILMSI" value="Master ILMSI"/>
+          <input class="input" id="formation" placeholder="Ex: Master ILMSI"/>
         </div>
         <div>
-          <label>Année (ex: 2ème année)</label>
-          <input class="input" id="year" placeholder="Ex: 2ème année" value="2ème année"/>
+          <label>Annee d'etude</label>
+          <input class="input" id="year" placeholder="Ex: 2eme annee"/>
         </div>
       </div>
 
       <div class="grid grid-2">
         <div>
           <label>Campus</label>
-          <input class="input" id="campus" placeholder="Ex: Pontoise" value="Pontoise"/>
+          <input class="input" id="campus" placeholder="Ex: Pontoise"/>
         </div>
         <div>
-          <label>Téléphone</label>
-          <input class="input" id="phone" placeholder="Ex: 06 00 00 00 00" value="06 00 00 00 00"/>
+          <label>Telephone</label>
+          <input class="input" id="phone" placeholder="Ex: 06 00 00 00 00"/>
         </div>
       </div>
 
       <div class="grid grid-2">
         <div>
-          <label>Rôle par défaut</label>
+          <label>Role par defaut</label>
           <select id="defaultRole">
             <option>Participant</option>
             <option>Ambassadeur</option>
           </select>
         </div>
         <div>
-          <label>Transport par défaut</label>
+          <label>Transport par defaut</label>
           <select id="defaultTransport">
             <option>Transports</option>
             <option>Voiture</option>
@@ -110,12 +114,13 @@
         </div>
       </div>
 
-      <label>Point de départ par défaut (facultatif)</label>
+      <label>Point de depart par defaut (facultatif)</label>
       <input class="input" id="defaultDepartFrom" placeholder="Ex: Domicile / Campus"/>
 
       <div class="hr"></div>
-      <button class="btn primary" onclick="saveProfile()">Enregistrer mon profil → Accéder aux évènements</button>
+      <button class="btn primary" onclick="saveProfile()">Enregistrer mon profil</button>
     </div>
   </div>
 </body>
 </html>
+

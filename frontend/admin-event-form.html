@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Admin Creation / Modification Evenement</title>
+  <title>Admin creation / modification evenement</title>
   <link rel="stylesheet" href="styles.css"/>
   <script defer src="app.js"></script>
   <script>
@@ -25,7 +25,8 @@
         document.querySelector("#date").value = e.date;
         document.querySelector("#city").value = e.city;
         document.querySelector("#location").value = e.location;
-        document.querySelector("#hours").value = e.hours;
+        document.querySelector("#startTime").value = e.startTime || "";
+        document.querySelector("#endTime").value = e.endTime || "";
         document.querySelector("#need").value = e.need;
         document.querySelector("#cname").value = e.contact?.name || "";
         document.querySelector("#cemail").value = e.contact?.email || "";
@@ -40,6 +41,12 @@
 
     function saveEvent(){
       const events = getEvents();
+      const startTime = document.querySelector("#startTime").value;
+      const endTime = document.querySelector("#endTime").value;
+      const cemail = document.querySelector("#cemail").value.trim();
+      const cphone = document.querySelector("#cphone").value.trim();
+      const need = parseInt(document.querySelector("#need").value || "0",10) || 0;
+
       const data = {
         id: EVT_ID,
         type: document.querySelector("#type").value,
@@ -47,29 +54,45 @@
         date: document.querySelector("#date").value,
         city: document.querySelector("#city").value.trim(),
         location: document.querySelector("#location").value.trim(),
-        hours: document.querySelector("#hours").value.trim(),
-        need: parseInt(document.querySelector("#need").value || "0",10) || 0,
+        startTime,
+        endTime,
+        hours: formatEventHours(startTime, endTime),
+        need,
         contact: {
           name: document.querySelector("#cname").value.trim(),
-          email: document.querySelector("#cemail").value.trim(),
-          phone: document.querySelector("#cphone").value.trim(),
+          email: cemail,
+          phone: cphone,
         },
         description: document.querySelector("#desc").value.trim(),
       };
 
-      if(!data.type || !data.title || !data.date || !data.city) return alert("Veuillez remplir au minimum : Type, Titre, Date, Ville.");
+      if(!data.type || !data.title || !data.date || !data.city || !data.startTime || !data.endTime){
+        return alert("Veuillez remplir Type, Titre, Date, Ville, Heure debut et Heure fin.");
+      }
+      if(data.startTime >= data.endTime){
+        return alert("L'heure de fin doit etre strictement superieure a l'heure de debut.");
+      }
+      if(data.need <= 0){
+        return alert("Le nombre d'etudiants requis doit etre superieur a 0.");
+      }
+      if(cemail && !isValidEmail(cemail)){
+        return alert("Format email contact invalide.");
+      }
+      if(cphone && !isValidPhone(cphone)){
+        return alert("Format telephone contact invalide.");
+      }
 
       if(MODE === "create"){
         data.id = nextEventId(events);
         events.push(data);
         setEvents(events);
-        alert("Evenement cree (prototype).");
+        alert("Evenement cree.");
       }else{
         const idx = events.findIndex(x=>x.id===EVT_ID);
         if(idx<0) return go("admin-events.html");
         events[idx] = data;
         setEvents(events);
-        alert("Evenement modifie (prototype).");
+        alert("Evenement modifie.");
       }
       go("admin-events.html");
     }
@@ -79,7 +102,7 @@
   <div class="container">
     <div class="topbar">
       <div class="brand">
-        <div class="logo"></div>
+        <div class="brand-logos"><img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/><img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/></div>
         <div>
           <div class="h1" id="h"></div>
           <div class="muted">ID : <span id="id"></span></div>
@@ -91,19 +114,19 @@
     <div class="card">
       <div class="grid grid-2">
         <div>
-          <label>Type d'évènement</label>
+          <label>Type d'evenement</label>
           <select id="type">
             <option>Forum</option>
             <option>Salon</option>
             <option>JPO</option>
             <option>Intervention</option>
-            <option>évenement école</option>
+            <option>Evenement ecole</option>
             <option>Atelier</option>
           </select>
         </div>
         <div>
           <label>Titre</label>
-          <input class="input" id="title" placeholder="Ex: Salon de l'étudiant - Paris"/>
+          <input class="input" id="title" placeholder="Ex: Salon de l'etudiant - Paris"/>
         </div>
       </div>
 
@@ -112,9 +135,17 @@
           <label>Date</label>
           <input class="input" id="date" type="date"/>
         </div>
+        <div></div>
+      </div>
+
+      <div class="grid grid-2">
         <div>
-          <label>Horaires</label>
-          <input class="input" id="hours" placeholder="Ex: 09:00 - 17:00"/>
+          <label>Heure de debut</label>
+          <input class="input" id="startTime" type="time"/>
+        </div>
+        <div>
+          <label>Heure de fin</label>
+          <input class="input" id="endTime" type="time"/>
         </div>
       </div>
 
@@ -131,8 +162,8 @@
 
       <div class="grid grid-2">
         <div>
-          <label>Besoin (nb etudiants)</label>
-          <input class="input" id="need" type="number" min="0" placeholder="Ex: 4"/>
+          <label>Nombre d'etudiants requis</label>
+          <input class="input" id="need" type="number" min="1" placeholder="Ex: 4"/>
         </div>
         <div>
           <label>Contact sur place</label>
@@ -160,3 +191,4 @@
   </div>
 </body>
 </html>
+

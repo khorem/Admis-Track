@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Présence</title>
+  <title>Presence</title>
   <link rel="stylesheet" href="styles.css"/>
   <script defer src="app.js"></script>
   <script>
@@ -17,9 +17,9 @@
       CURRENT_P = getParticipationByEvent(eventId);
       if(!CURRENT_P) go("student-events.html");
 
-      document.querySelector("#evt").textContent = `${CURRENT_P.event.title} ? ${CURRENT_P.event.date}`;
-      document.querySelector("#arrivedAt").value = CURRENT_P.presence.arrivedAt || "09:00";
-      document.querySelector("#leftAt").value = CURRENT_P.presence.leftAt || "17:00";
+      document.querySelector("#evt").textContent = `${CURRENT_P.event.title} - ${CURRENT_P.event.date}`;
+      document.querySelector("#arrivedAt").value = CURRENT_P.presence.arrivedAt || "";
+      document.querySelector("#leftAt").value = CURRENT_P.presence.leftAt || "";
       document.querySelector("#present").value = CURRENT_P.presence.present || "non";
       document.querySelector("#transport").value = CURRENT_P.presence.transport || "Transports";
       document.querySelector("#departFrom").value = CURRENT_P.presence.departFrom || "";
@@ -34,8 +34,7 @@
 
     function toggleJustif(){
       const present = document.querySelector("#present").value;
-      const box = document.querySelector("#justifBox");
-      box.style.display = (present === "oui") ? "block" : "none";
+      document.querySelector("#justifBox").style.display = (present === "oui") ? "block" : "none";
     }
 
     function savePresence(next=false){
@@ -46,12 +45,10 @@
       const leftAt = document.querySelector("#leftAt").value;
       const transport = document.querySelector("#transport").value;
       const departFrom = document.querySelector("#departFrom").value;
-
-      // justificatif obligatoire si present = oui
       const file = document.querySelector("#justif").files[0];
 
       if(present === "oui" && !file && !CURRENT_P.presence.justificatifDataUrl){
-        return alert("Justificatif obligatoire si vous etes present (photo / fichier).");
+        return alert("Justificatif obligatoire si vous etes present.");
       }
 
       CURRENT_P.presence.present = present;
@@ -64,15 +61,16 @@
         fileToDataUrl(file, ({name, dataUrl})=>{
           CURRENT_P.presence.justificatifName = name;
           CURRENT_P.presence.justificatifDataUrl = dataUrl;
+          CURRENT_P.presence.justificatifOwnerEmail = CURRENT_P.student.email;
           CURRENT_P.status = "Presence renseignee";
           upsertParticipation(CURRENT_P);
-          alert("Presence enregistree (prototype).");
+          alert("Presence enregistree.");
           if(next) go(`student-defraiement.html?event=${encodeURIComponent(CURRENT_P.event.id)}`);
         });
       }else{
         CURRENT_P.status = "Presence renseignee";
         upsertParticipation(CURRENT_P);
-        alert("Presence enregistree (prototype).");
+        alert("Presence enregistree.");
         if(next) go(`student-defraiement.html?event=${encodeURIComponent(CURRENT_P.event.id)}`);
       }
     }
@@ -82,9 +80,9 @@
   <div class="container">
     <div class="topbar">
       <div class="brand">
-        <div class="logo"></div>
+        <div class="brand-logos"><img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/><img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/></div>
         <div>
-          <div class="h1">Présence</div>
+          <div class="h1">Presence</div>
           <div class="muted" id="evt"></div>
         </div>
       </div>
@@ -93,19 +91,18 @@
 
     <div class="steps">
       <div class="step">1. Inscription evenement</div>
-      <div class="step active">2.Présence</div>
-      <div class="step">3.Defraiement</div>
+      <div class="step active">2. Presence</div>
+      <div class="step">3. Defraiement</div>
     </div>
 
     <div class="note" id="lock" style="margin-top:14px;display:none">
-      Cet ecran est debloque <b>à partir de la date de l'évenement</b>.
-      Vous avez déjà pu transmettre votre dossier à l'Admissions via la fiche d'inscription.
+      Cet ecran est debloque a partir de la date de l'evenement.
     </div>
 
     <div class="card" id="form" style="margin-top:14px;display:none">
       <div class="grid grid-2">
         <div>
-          <label>Heure d'arrivée</label>
+          <label>Heure d'arrivee</label>
           <input class="input" id="arrivedAt" placeholder="Ex: 09:00"/>
         </div>
         <div>
@@ -114,7 +111,7 @@
         </div>
       </div>
 
-      <label>Présent</label>
+      <label>Present</label>
       <select id="present" onchange="toggleJustif()">
         <option value="oui">Oui</option>
         <option value="non">Non</option>
@@ -130,24 +127,24 @@
           </select>
         </div>
         <div>
-          <label>Point de départ prevu</label>
+          <label>Point de depart prevu</label>
           <input class="input" id="departFrom" placeholder="Ex: Domicile / Campus"/>
         </div>
       </div>
 
       <div id="justifBox" style="display:none">
-        <label>Justificatif de présence (obligatoire si Présent = Oui)</label>
+        <label>Justificatif de presence (obligatoire si Present = Oui)</label>
         <input class="input" type="file" id="justif" accept="image/*,.pdf"/>
-        <!-- <div class="small">Prototype : le fichier est stocke localement (base64).</div> -->
       </div>
 
       <div class="hr"></div>
       <div class="row">
         <button class="btn primary" onclick="savePresence(false)">Enregistrer</button>
-        <button class="btn success" onclick="savePresence(true)">Enregistrer Defraiement</button>
-        <a class="btn ghost" id="gotoDef" href="#">Aller au defraiement</a>
+        <button class="btn success" onclick="savePresence(true)">Enregistrer puis Defraiement</button>
+        <!-- <a class="btn ghost" id="gotoDef" href="#">Aller au defraiement</a> -->
       </div>
     </div>
   </div>
 </body>
 </html>
+

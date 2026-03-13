@@ -13,13 +13,13 @@
       const p = id ? getParticipationById(id) : null;
       if(!p) go("student-events.html");
 
-      document.querySelector("#msg").textContent = `Dossier transmis à l'Admissions pour : ${p.event.title}.`;
+      document.querySelector("#msg").textContent = `Dossier transmis a l'admission pour : ${p.event.title}.`;
       document.querySelector("#id").textContent = p.id;
 
       const unlocked = isUnlockedByDate(p.event.date);
       document.querySelector("#unlock").innerHTML = unlocked
-        ? `<span class="badge ok">Presence & Defraiement accessibles</span>`
-        : `<span class="badge warn">Presence & Defraiement debloques le ${p.event.date}</span>`;
+        ? `<span class="badge ok">Presence et Defraiement accessibles</span>`
+        : `<span class="badge warn">Presence et Defraiement debloques le ${p.event.date}</span>`;
 
       document.querySelector("#next").href = `student-presence.html?event=${encodeURIComponent(p.event.id)}`;
     });
@@ -29,7 +29,10 @@
   <div class="container">
     <div class="topbar">
       <div class="brand">
-        <div class="logo"></div>
+        <div class="brand-logos">
+          <img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/>
+          <img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/>
+        </div>
         <div>
           <div class="h1">Confirmation</div>
           <div class="muted">Dossier evenement enregistre</div>
@@ -48,15 +51,10 @@
       <div id="unlock"></div>
 
       <div class="row" style="margin-top:12px">
-        <a class="btn primary" id="next" href="#">Acceder Presence / Defraiement</a>
+        <a class="btn primary" id="next" href="#">Acceder a Presence / Defraiement</a>
         <a class="btn ghost" href="student-status.html">Suivi defraiements</a>
         <a class="btn ghost" href="index.html">Accueil</a>
       </div>
-
-      <div class="hr"></div>
-      <!-- <div class="small"> -->
-        <!-- (Prototype) Les donnees sont stockees localement. Admissions verra le dossier dans la ?grande fiche?. -->
-      <!-- </div> -->
     </div>
   </div>
 </body>

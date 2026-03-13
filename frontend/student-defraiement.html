@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8"/>
@@ -17,27 +17,42 @@
       CURRENT_P = getParticipationByEvent(eventId);
       if(!CURRENT_P) go("student-events.html");
 
-      document.querySelector("#evt").textContent = `${CURRENT_P.event.title} Defraiement`;
+      document.querySelector("#evt").textContent = `${CURRENT_P.event.title} - Defraiement`;
       document.querySelector("#type").value = CURRENT_P.defraiement.type || "Transports";
-      document.querySelector("#trajetA").value = CURRENT_P.defraiement.trajetA || "Point A";
-      document.querySelector("#trajetB").value = CURRENT_P.defraiement.trajetB || CURRENT_P.event.location;
+      document.querySelector("#trajetA").value = CURRENT_P.defraiement.trajetA || "";
+      document.querySelector("#trajetB").value = CURRENT_P.defraiement.trajetB || "";
       document.querySelector("#distanceKmAR").value = CURRENT_P.defraiement.distanceKmAR || "";
+      document.querySelector("#breakfastWanted").checked = !!CURRENT_P.defraiement.breakfastWanted;
 
       const unlocked = isUnlockedByDate(CURRENT_P.event.date);
       document.querySelector("#lock").style.display = unlocked ? "none" : "block";
       document.querySelector("#form").style.display = unlocked ? "block" : "none";
 
-      // etat actuel (retour admin)
       document.querySelector("#status").innerHTML = `
         <div class="row" style="gap:8px">
           <span class="badge pri">Statut defraiement: ${CURRENT_P.defraiement.status}</span>
-          ${CURRENT_P.defraiement.adminMessage ? `<span class="badge">Message: ${CURRENT_P.defraiement.adminMessage}</span>` : ``}
+          ${CURRENT_P.defraiement.adminMessage ? `<span class="badge">Message admission: ${CURRENT_P.defraiement.adminMessage}</span>` : ``}
         </div>
       `;
 
-      refreshCalc();
+      toggleBreakfast();
       toggleDistance();
+      refreshCalc();
     });
+
+    function isSalonEvent(){
+      return String(CURRENT_P?.event?.type || "").toLowerCase() === "salon";
+    }
+
+    function toggleBreakfast(){
+      const box = document.querySelector("#breakfastBox");
+      if(isSalonEvent()){
+        box.style.display = "block";
+      }else{
+        document.querySelector("#breakfastWanted").checked = false;
+        box.style.display = "none";
+      }
+    }
 
     function toggleDistance(){
       const type = document.querySelector("#type").value;
@@ -49,23 +64,21 @@
       if(!CURRENT_P) return;
       const type = document.querySelector("#type").value;
       const dist = parseFloat(document.querySelector("#distanceKmAR").value || "0");
+      const breakfastWanted = document.querySelector("#breakfastWanted").checked;
 
-      // Dejeuner : uniquement si evenement de type "Salon" ET presence "oui"
-      const lunch = (String(CURRENT_P.event.type||"").toLowerCase() === "salon" && CURRENT_P.presence.present === "oui") ? 10 : 0;
-
+      const breakfast = (isSalonEvent() && breakfastWanted) ? 10 : 0;
       let car = 0;
       if(type === "Voiture"){
         if(dist > 0 && dist < 20) car = 10;
         if(dist >= 20) car = 20;
       }
-
-      const total = car + lunch;
+      const total = car + breakfast;
 
       document.querySelector("#calc").innerHTML = `
         <div class="kv">
-          <div>Defraiement voiture</div><div><b>${car.toFixed(0)} €</b></div>
-          <div>Dejeuner (Salon)</div><div><b>${lunch.toFixed(0)} €</b></div>
-          <div>Total (cheque cadeau)</div><div><b>${total.toFixed(0)} €</b></div>
+          <div>Defraiement voiture</div><div><b>${car.toFixed(0)} EUR</b></div>
+          <div>Petit-dejeuner (Salon)</div><div><b>${breakfast.toFixed(0)} EUR</b></div>
+          <div>Total (cheque cadeau)</div><div><b>${total.toFixed(0)} EUR</b></div>
         </div>
       `;
     }
@@ -74,36 +87,36 @@
       if(!CURRENT_P) return;
 
       const type = document.querySelector("#type").value;
-      const trajetA = document.querySelector("#trajetA").value;
-      const trajetB = document.querySelector("#trajetB").value;
-      const distanceKmAR = document.querySelector("#distanceKmAR").value;
-
-      const file = document.querySelector("#justif").files[0]; // facultatif
+      const trajetA = document.querySelector("#trajetA").value.trim();
+      const trajetB = document.querySelector("#trajetB").value.trim();
+      const distanceKmAR = document.querySelector("#distanceKmAR").value.trim();
+      const breakfastWanted = document.querySelector("#breakfastWanted").checked;
+      const file = document.querySelector("#justif").files[0];
 
       CURRENT_P.defraiement.type = type;
       CURRENT_P.defraiement.trajetA = trajetA;
       CURRENT_P.defraiement.trajetB = trajetB;
       CURRENT_P.defraiement.distanceKmAR = distanceKmAR;
+      CURRENT_P.defraiement.breakfastWanted = isSalonEvent() ? breakfastWanted : false;
 
-      // recalcul
       const dist = parseFloat(distanceKmAR || "0");
-      const lunch = (String(CURRENT_P.event.type||"").toLowerCase() === "salon" && CURRENT_P.presence.present === "oui") ? 10 : 0;
+      const breakfast = (isSalonEvent() && CURRENT_P.defraiement.breakfastWanted) ? 10 : 0;
       let car = 0;
       if(type === "Voiture"){
         if(dist > 0 && dist < 20) car = 10;
         if(dist >= 20) car = 20;
       }
-      const total = car + lunch;
-      CURRENT_P.defraiement.lunchSalon = lunch;
+      const total = car + breakfast;
+      CURRENT_P.defraiement.lunchSalon = breakfast;
       CURRENT_P.defraiement.amountCalculated = String(total.toFixed(0));
 
       const finalize = ()=>{
         if(submit){
           CURRENT_P.defraiement.status = "En attente";
-          CURRENT_P.status = "Defraiement demandé";
+          CURRENT_P.status = "Defraiement demande";
         }
         upsertParticipation(CURRENT_P);
-        alert(submit ? "Demande de defraiement envoyée (prototype)." : "Defraiement enregistré.");
+        alert(submit ? "Demande de defraiement envoyee." : "Defraiement enregistre.");
         go("student-status.html");
       };
 
@@ -111,6 +124,7 @@
         fileToDataUrl(file, ({name, dataUrl})=>{
           CURRENT_P.defraiement.justificatifName = name;
           CURRENT_P.defraiement.justificatifDataUrl = dataUrl;
+          CURRENT_P.defraiement.justificatifOwnerEmail = CURRENT_P.student.email;
           finalize();
         });
       }else{
@@ -123,7 +137,7 @@
   <div class="container">
     <div class="topbar">
       <div class="brand">
-        <div class="logo"></div>
+        <div class="brand-logos"><img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/><img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/></div>
         <div>
           <div class="h1">Fiche Defraiement</div>
           <div class="muted" id="evt"></div>
@@ -139,7 +153,7 @@
     </div>
 
     <div class="note" id="lock" style="margin-top:14px;display:none">
-      Cet ecran est debloqué <b>à partir de la date de l'évenement</b>.
+      Cet ecran est debloque a partir de la date de l'evenement.
     </div>
 
     <div class="card" id="form" style="margin-top:14px;display:none">
@@ -155,38 +169,42 @@
 
       <div class="grid grid-2">
         <div>
-          <label>Trajet Point A</label>
+          <label>Trajet point A</label>
           <input class="input" id="trajetA" placeholder="Ex: Domicile / Campus" oninput="refreshCalc()"/>
         </div>
         <div>
-          <label>Trajet Point B</label>
-          <input class="input" id="trajetB" placeholder="Ex: Lieu de l'évenement" oninput="refreshCalc()"/>
+          <label>Trajet point B</label>
+          <input class="input" id="trajetB" placeholder="Ex: Lieu de l'evenement" oninput="refreshCalc()"/>
         </div>
       </div>
 
       <div id="distanceBox" style="display:none">
         <label>Distance (km) A/R (uniquement si voiture)</label>
         <input class="input" id="distanceKmAR" placeholder="Ex: 18" oninput="refreshCalc()"/>
-        <!-- <div class="small">Regle : voiture = 10? si &lt;20km A/R, 20? si ?20km A/R.</div> -->
+      </div>
+
+      <div id="breakfastBox" style="display:none">
+        <label>
+          <input type="checkbox" id="breakfastWanted" onchange="refreshCalc()"/>
+          Petit-dejeuner pris (seulement pour les salons)
+        </label>
       </div>
 
       <div class="hr"></div>
-      <h2>Calcul automatique (cheque cadeau)</h2>
-      <div class="muted">+ 10€ de dejeuner si l'évenement est un <b>Salon</b>et si vous etes <b>présent</b>.</div>
-      <div class="hr"></div>
+      <h2>Calcul automatique</h2>
       <div id="calc"></div>
 
       <div class="hr"></div>
       <label>Justificatif (facultatif)</label>
       <input class="input" type="file" id="justif" accept="image/*,.pdf"/>
-      <!-- <div class="small">Prototype : le fichier est stocke localement (base64).</div> -->
 
       <div class="hr"></div>
       <div class="row">
-        <button class="btn primary" onclick="saveDefraiement(false)">Enregistrer</button>
-        <button class="btn success" onclick="saveDefraiement(true)">Envoyer la demande de suivi</button>
+        <button class="btn primary" onclick="saveDefraiement(false)">Enregistrer brouillon</button>
+        <button class="btn success" onclick="saveDefraiement(true)">Soumettre defraiement</button>
       </div>
     </div>
   </div>
 </body>
 </html>
+
