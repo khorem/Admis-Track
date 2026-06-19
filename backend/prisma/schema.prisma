@@ -1,0 +1,284 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  ADMISSIONS
+}
+
+enum LegacyRepas {
+  non
+  oui_esiie
+  partenaire
+}
+
+model User {
+  id                Int             @id @default(autoincrement())
+  email             String          @unique @db.VarChar(191)
+  role              UserRole        @default(STUDENT)
+  name              String?         @db.VarChar(191)
+  phone             String?         @db.VarChar(60)
+  formation         String?         @db.VarChar(191)
+  campus            String?         @db.VarChar(191)
+  studyYear         String?         @db.VarChar(80)
+  defaultRoleWanted String?         @db.VarChar(80)
+  defaultTransport  String?         @db.VarChar(80)
+  defaultDepartFrom String?         @db.VarChar(191)
+  isActive          Boolean         @default(true)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  participations    Participation[] @relation("StudentParticipations")
+  createdEvents     Event[]         @relation("EventCreator")
+  authoredNotifs    Notification[]  @relation("NotificationActor")
+}
+
+model Event {
+  id           Int             @id @default(autoincrement())
+  code         String          @unique @db.VarChar(30)
+  type         String          @db.VarChar(80)
+  title        String          @db.VarChar(191)
+  date         DateTime        @db.Date
+  city         String          @db.VarChar(120)
+  location     String          @db.VarChar(191)
+  startTime    String          @db.VarChar(10)
+  endTime      String          @db.VarChar(10)
+  hours        String          @db.VarChar(40)
+  need         Int
+  contactName  String?         @db.VarChar(191)
+  contactEmail String?         @db.VarChar(191)
+  contactPhone String?         @db.VarChar(60)
+  description  String?         @db.Text
+  createdById  Int?
+  createdBy    User?           @relation("EventCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  deletedAt    DateTime?
+  participations Participation[]
+
+  @@index([type])
+  @@index([date])
+  @@index([deletedAt])
+}
+
+model Participation {
+  id             Int            @id @default(autoincrement())
+  code           String         @unique @db.VarChar(30)
+  status         String         @default("Brouillon") @db.VarChar(80)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  studentId      Int
+  eventId        Int
+  student        User           @relation("StudentParticipations", fields: [studentId], references: [id], onDelete: Restrict)
+  event          Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  inscription    Inscription?
+  presence       Presence?
+  defraiement    Defraiement?
+  internalReview InternalReview?
+
+  @@unique([studentId, eventId])
+  @@index([eventId, status])
+  @@index([studentId, status])
+}
+
+model Inscription {
+  id              Int           @id @default(autoincrement())
+  participationId Int           @unique
+  available       String        @default("oui") @db.VarChar(10)
+  roleWanted      String        @default("Participant") @db.VarChar(80)
+  motivation      String?       @db.Text
+  participation   Participation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+}
+
+model Presence {
+  id                     Int           @id @default(autoincrement())
+  participationId        Int           @unique
+  present                String        @default("non") @db.VarChar(10)
+  arrivedAt              String?       @db.VarChar(10)
+  leftAt                 String?       @db.VarChar(10)
+  transport              String        @default("Transports") @db.VarChar(80)
+  departFrom             String?       @db.VarChar(191)
+  departTime             String?       @db.VarChar(10)
+  notes                  String?       @db.Text
+  justificatifName       String?       @db.VarChar(191)
+  justificatifDataUrl    String?       @db.LongText
+  justificatifOwnerEmail String?       @db.VarChar(191)
+  participation          Participation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+}
+
+model Defraiement {
+  id                     Int           @id @default(autoincrement())
+  participationId        Int           @unique
+  type                   String        @default("Transports") @db.VarChar(80)
+  trajetA                String?       @db.VarChar(191)
+  trajetB                String?       @db.VarChar(191)
+  distanceKmAR           Float?
+  amountCalculated       Decimal?      @db.Decimal(10, 2)
+  breakfastWanted        Boolean       @default(false)
+  lunchSalon             Decimal       @default(0) @db.Decimal(10, 2)
+  justificatifName       String?       @db.VarChar(191)
+  justificatifDataUrl    String?       @db.LongText
+  justificatifOwnerEmail String?       @db.VarChar(191)
+  status                 String        @default("Non demande") @db.VarChar(80)
+  adminMessage           String?       @db.Text
+  participation          Participation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+}
+
+model InternalReview {
+  id                Int           @id @default(autoincrement())
+  participationId   Int           @unique
+  confirmedBySchool String        @default("non") @db.VarChar(10)
+  managedBy         String        @default("Admissions") @db.VarChar(80)
+  internalComment   String?       @db.Text
+  amountValidated   Decimal?      @db.Decimal(10, 2)
+  ccDonnes          String        @default("non") @db.VarChar(10)
+  participation     Participation @relation(fields: [participationId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique @db.VarChar(30)
+  kind      String   @db.VarChar(80)
+  message   String   @db.Text
+  meta      Json?
+  actorId   Int?
+  actor     User?    @relation("NotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([kind])
+}
+
+model LegacyTypeUtilisateur {
+  id        Int              @id @default(autoincrement())
+  libelle   String           @unique @db.VarChar(50)
+  personnes LegacyPersonne[]
+
+  @@map("type_utilisateur")
+}
+
+model LegacyPersonne {
+  id                  Int                  @id @default(autoincrement())
+  nom                 String               @db.VarChar(50)
+  prenom              String?              @db.VarChar(50)
+  email               String?              @unique @db.VarChar(100)
+  telephone           String?              @db.VarChar(20)
+  programme           String?              @db.VarChar(100)
+  id_type_utilisateur Int?
+  typeUtilisateur     LegacyTypeUtilisateur? @relation(fields: [id_type_utilisateur], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "personne_ibfk_1")
+  participations      LegacyParticiper[]
+  ambassadeur         LegacyListeAmbassadeur?
+
+  @@index([id_type_utilisateur], map: "id_type_utilisateur")
+  @@map("personne")
+}
+
+model LegacyTypeEvenement {
+  id         Int               @id @default(autoincrement())
+  libelle    String            @unique @db.VarChar(50)
+  evenements LegacyEvenement[]
+
+  @@map("type_evenement")
+}
+
+model LegacyEtablissement {
+  id                 Int               @id @default(autoincrement())
+  nom                String            @db.VarChar(100)
+  type_etablissement String?           @db.VarChar(50)
+  adresse            String?           @db.VarChar(255)
+  ville              String?           @db.VarChar(100)
+  code_postal        String?           @db.VarChar(10)
+  contacts           LegacyContact[]
+  evenements         LegacyEvenement[]
+
+  @@map("etablissement")
+}
+
+model LegacyContact {
+  id               Int                 @id @default(autoincrement())
+  id_etablissement Int?
+  nom              String?             @db.VarChar(100)
+  prenom           String?             @db.VarChar(50)
+  telephone        String?             @db.VarChar(20)
+  email            String?             @db.VarChar(100)
+  role             String?             @db.VarChar(50)
+  etablissement    LegacyEtablissement? @relation(fields: [id_etablissement], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "contact_ibfk_1")
+
+  @@index([id_etablissement], map: "id_etablissement")
+  @@map("contact")
+}
+
+model LegacyEvenement {
+  id                Int                 @id @default(autoincrement())
+  titre             String              @db.VarChar(200)
+  description       String?             @db.Text
+  date_debut        DateTime?           @db.Date
+  heure_debut       DateTime?           @db.Time(0)
+  heure_fin         DateTime?           @db.Time(0)
+  date_fin          DateTime?           @db.Date
+  id_etablissement  Int?
+  id_type_evenement Int?
+  objectif_fiches   Int?
+  repas             LegacyRepas?        @default(non)
+  etablissement     LegacyEtablissement? @relation(fields: [id_etablissement], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "evenement_ibfk_1")
+  typeEvenement     LegacyTypeEvenement? @relation(fields: [id_type_evenement], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "evenement_ibfk_2")
+  fiches            LegacyFicheContact[]
+  journaux          LegacyJournalisation[]
+  participations    LegacyParticiper[]
+
+  @@index([id_etablissement], map: "id_etablissement")
+  @@index([id_type_evenement], map: "id_type_evenement")
+  @@map("evenement")
+}
+
+model LegacyFicheContact {
+  id                    Int              @id @default(autoincrement())
+  id_evenement          Int?
+  nom_contact           String?          @db.VarChar(100)
+  prenom_contact        String?          @db.VarChar(50)
+  email_contact         String?          @db.VarChar(100)
+  etablissement_contact String?          @db.VarChar(100)
+  evenement             LegacyEvenement? @relation(fields: [id_evenement], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fiche_contact_ibfk_1")
+
+  @@index([id_evenement], map: "id_evenement")
+  @@map("fiche_contact")
+}
+
+model LegacyJournalisation {
+  id          Int              @id @default(autoincrement())
+  id_evenement Int?
+  action      String?          @db.VarChar(100)
+  date_action DateTime?        @default(now()) @db.DateTime(0)
+  evenement   LegacyEvenement? @relation(fields: [id_evenement], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "journalisation_ibfk_1")
+
+  @@index([id_evenement], map: "id_evenement")
+  @@map("journalisation")
+}
+
+model LegacyListeAmbassadeur {
+  id_personne Int           @id
+  points      Int?          @default(0)
+  statut      String?       @default("actif") @db.VarChar(20)
+  personne    LegacyPersonne @relation(fields: [id_personne], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "liste_ambassadeur_ibfk_1")
+
+  @@map("liste_ambassadeur")
+}
+
+model LegacyParticiper {
+  id_personne   Int
+  id_evenement  Int
+  mode_arrivee  String?        @db.VarChar(50)
+  commentaires  String?        @db.Text
+  fiches_collectees Int?
+  personne      LegacyPersonne @relation(fields: [id_personne], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "participer_ibfk_1")
+  evenement     LegacyEvenement @relation(fields: [id_evenement], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "participer_ibfk_2")
+
+  @@id([id_personne, id_evenement])
+  @@index([id_evenement], map: "id_evenement")
+  @@map("participer")
+}

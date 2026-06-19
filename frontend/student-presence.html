@@ -1,0 +1,158 @@
+﻿<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Presence</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+  <script>
+    let CURRENT_P = null;
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      requireStudent();
+      const eventId = getParam("event") || localStorage.getItem("selectedEventId");
+      if(!eventId) go("student-events.html");
+
+      await syncMyParticipations();
+      CURRENT_P = getParticipationByEvent(eventId);
+      if(!CURRENT_P) go("student-events.html");
+
+      document.querySelector("#evt").textContent = `${CURRENT_P.event.title} - ${CURRENT_P.event.date}`;
+      document.querySelector("#arrivedAt").value = CURRENT_P.presence.arrivedAt || "";
+      document.querySelector("#leftAt").value = CURRENT_P.presence.leftAt || "";
+      document.querySelector("#present").value = CURRENT_P.presence.present || "non";
+      document.querySelector("#transport").value = CURRENT_P.presence.transport || "Transports";
+      document.querySelector("#departFrom").value = CURRENT_P.presence.departFrom || "";
+
+      const unlocked = isUnlockedByDate(CURRENT_P.event.date);
+      document.querySelector("#lock").style.display = unlocked ? "none" : "block";
+      document.querySelector("#form").style.display = unlocked ? "block" : "none";
+
+      toggleJustif();
+    });
+
+    function toggleJustif(){
+      const present = document.querySelector("#present").value;
+      document.querySelector("#justifBox").style.display = (present === "oui") ? "block" : "none";
+    }
+
+    async function savePresence(next=false){
+      if(!CURRENT_P) return;
+
+      const present = document.querySelector("#present").value;
+      const arrivedAt = document.querySelector("#arrivedAt").value;
+      const leftAt = document.querySelector("#leftAt").value;
+      const transport = document.querySelector("#transport").value;
+      const departFrom = document.querySelector("#departFrom").value;
+      const file = document.querySelector("#justif").files[0];
+
+      if(present === "oui" && !file && !CURRENT_P.presence.justificatifDataUrl){
+        return alert("Justificatif obligatoire si vous etes present.");
+      }
+
+      CURRENT_P.presence.present = present;
+      CURRENT_P.presence.arrivedAt = arrivedAt;
+      CURRENT_P.presence.leftAt = leftAt;
+      CURRENT_P.presence.transport = transport;
+      CURRENT_P.presence.departFrom = departFrom;
+
+      try{
+        if(file){
+          const uploaded = await fileToDataUrlAsync(file);
+          CURRENT_P.presence.justificatifName = uploaded.name;
+          CURRENT_P.presence.justificatifDataUrl = uploaded.dataUrl;
+          CURRENT_P.presence.justificatifOwnerEmail = CURRENT_P.student.email;
+        }
+
+        CURRENT_P = await savePresenceStep(CURRENT_P.id, {
+          present,
+          arrivedAt,
+          leftAt,
+          transport,
+          departFrom,
+          justificatifName: CURRENT_P.presence.justificatifName || "",
+          justificatifDataUrl: CURRENT_P.presence.justificatifDataUrl || "",
+          justificatifOwnerEmail: CURRENT_P.presence.justificatifOwnerEmail || CURRENT_P.student.email
+        });
+
+        alert("Presence enregistree.");
+        if(next) go(`student-defraiement.html?event=${encodeURIComponent(CURRENT_P.event.id)}`);
+      }catch(err){
+        alert(err.message || "Erreur lors de l'enregistrement de la presence.");
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-logos"><img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/><img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/></div>
+        <div>
+          <div class="h1">Presence</div>
+          <div class="muted" id="evt"></div>
+        </div>
+      </div>
+      <a class="btn ghost" href="student-events.html">Retour</a>
+    </div>
+
+    <div class="steps">
+      <div class="step">1. Inscription evenement</div>
+      <div class="step active">2. Presence</div>
+      <div class="step">3. Defraiement</div>
+    </div>
+
+    <div class="note" id="lock" style="margin-top:14px;display:none">
+      Cet ecran est debloque a partir de la date de l'evenement.
+    </div>
+
+    <div class="card" id="form" style="margin-top:14px;display:none">
+      <div class="grid grid-2">
+        <div>
+          <label>Heure d'arrivee</label>
+          <input class="input" id="arrivedAt" placeholder="Ex: 09:00"/>
+        </div>
+        <div>
+          <label>Heure de depart</label>
+          <input class="input" id="leftAt" placeholder="Ex: 17:00"/>
+        </div>
+      </div>
+
+      <label>Present</label>
+      <select id="present" onchange="toggleJustif()">
+        <option value="oui">Oui</option>
+        <option value="non">Non</option>
+      </select>
+
+      <div class="grid grid-2">
+        <div>
+          <label>Moyen de transport</label>
+          <select id="transport">
+            <option>Transports</option>
+            <option>Voiture</option>
+            <option>Covoiturage</option>
+          </select>
+        </div>
+        <div>
+          <label>Point de depart prevu</label>
+          <input class="input" id="departFrom" placeholder="Ex: Domicile / Campus"/>
+        </div>
+      </div>
+
+      <div id="justifBox" style="display:none">
+        <label>Justificatif de presence (obligatoire si Present = Oui)</label>
+        <input class="input" type="file" id="justif" accept="image/*,.pdf"/>
+      </div>
+
+      <div class="hr"></div>
+      <div class="row">
+        <button class="btn primary" onclick="savePresence(false)">Enregistrer</button>
+        <button class="btn success" onclick="savePresence(true)">Enregistrer puis Defraiement</button>
+        <!-- <a class="btn ghost" id="gotoDef" href="#">Aller au defraiement</a> -->
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Confirmation</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", async () => {
+      requireStudent();
+      const id = getParam("part");
+      let p = id ? getParticipationById(id) : null;
+      if(!p && id){
+        try{ p = await refreshParticipationById(id); }catch{}
+      }
+      if(!p) go("student-events.html");
+
+      document.querySelector("#msg").textContent = `Dossier transmis a l'admission pour : ${p.event.title}.`;
+      document.querySelector("#id").textContent = p.id;
+
+      const unlocked = isUnlockedByDate(p.event.date);
+      document.querySelector("#unlock").innerHTML = unlocked
+        ? `<span class="badge ok">Presence et Defraiement accessibles</span>`
+        : `<span class="badge warn">Presence et Defraiement debloques le ${p.event.date}</span>`;
+
+      document.querySelector("#next").href = `student-presence.html?event=${encodeURIComponent(p.event.id)}`;
+    });
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-logos">
+          <img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/>
+          <img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/>
+        </div>
+        <div>
+          <div class="h1">Confirmation</div>
+          <div class="muted">Dossier evenement enregistre</div>
+        </div>
+      </div>
+      <a class="btn ghost" href="student-events.html">Retour evenements</a>
+    </div>
+
+    <div class="card">
+      <span class="badge ok">Envoye</span>
+      <h2 style="margin-top:10px" id="msg"></h2>
+      <div class="muted">Reference dossier :</div>
+      <div style="font-size:18px;font-weight:800" id="id"></div>
+
+      <div class="hr"></div>
+      <div id="unlock"></div>
+
+      <div class="row" style="margin-top:12px">
+        <a class="btn primary" id="next" href="#">Acceder a Presence / Defraiement</a>
+        <a class="btn ghost" href="student-status.html">Suivi defraiements</a>
+        <a class="btn ghost" href="index.html">Accueil</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

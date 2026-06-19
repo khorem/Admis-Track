@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Connexion Admin</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+  <script>
+    async function doAdminLogin(){
+      const email = document.querySelector("#email").value.trim();
+      if(!email) return alert("Veuillez saisir un email.");
+      try{
+        await adminLogin(email);
+        go("admin-events.html");
+      }catch(err){
+        alert(err.message || "Erreur de connexion admin.");
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-logos">
+          <img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/>
+          <img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/>
+        </div>
+        <div>
+          <div class="h1">Admin</div>         
+        </div>
+      </div>
+      <a class="btn ghost" href="index.html">Accueil</a>
+    </div>
+
+    <div class="card">
+      <label>Email</label>
+      <input class="input" id="email" value="admissions@ecole.fr"/>
+
+      <div class="hr"></div>
+      <button class="btn primary" onclick="doAdminLogin()">Se connecter</button>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,84 @@
+﻿<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin detail evenement</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+  <script>
+    let EVT = null;
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      requireAdmin();
+      const eventId = getParam("event");
+      await syncEvents();
+      EVT = findEvent(eventId);
+      if(!EVT) go("admin-events.html");
+
+      const validated = getEventValidatedCount(EVT.id);
+      const submitted = getEventSubmittedCount(EVT.id);
+      const remaining = getRemainingValidatedSlots(EVT);
+
+      document.querySelector("#title").textContent = EVT.title;
+      document.querySelector("#meta").textContent = `${EVT.type} - ${EVT.date} - ${EVT.city} - ${EVT.hours}`;
+      document.querySelector("#capacity").textContent = `Inscrits: ${submitted} | Valides: ${validated} | Restants: ${remaining}`;
+      document.querySelector("#desc").textContent = EVT.description;
+
+      document.querySelector("#contact").textContent = `${EVT.contact?.name || ""} - ${EVT.contact?.email || ""} - ${EVT.contact?.phone || ""}`;
+      document.querySelector("#edit").href = `admin-event-form.html?mode=edit&event=${encodeURIComponent(EVT.id)}`;
+
+      await renderAdminEventParticipations("#students", EVT.id);
+    });
+
+    async function removeEvent(){
+      if(!EVT) return;
+      const ok = window.confirm(`Supprimer l'evenement "${EVT.title}" ?`);
+      if(!ok) return;
+      try{
+        await deleteEvent(EVT.id);
+        alert("Evenement supprime.");
+        go("admin-events.html");
+      }catch(err){
+        alert(err.message || "Erreur lors de la suppression.");
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-logos"><img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/><img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/></div>
+        <div>
+          <div class="h1" id="title"></div>
+          <div class="muted" id="meta"></div>
+          <div class="small" id="capacity"></div>
+        </div>
+      </div>
+      <div class="row">
+        <a class="btn ghost" id="edit" href="#">Modifier</a>
+        <button class="btn danger" onclick="removeEvent()">Supprimer evenement</button>
+        <a class="btn ghost" href="admin-events.html">Retour</a>
+      </div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h2>Details</h2>
+        <div class="muted" id="desc"></div>
+        <div class="hr"></div>
+        <div class="muted">Contact sur place</div>
+        <div id="contact" class="small"></div>
+      </div>
+
+      <div class="card">
+        <h2>Etudiants / dossiers</h2>
+        <div id="students"></div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Engagement Etudiant</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-logos">
+          <img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/>
+          <img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/>
+        </div>
+        <div>
+          <div class="h1">Suivi Engagement Etudiant</div>
+        </div>
+      </div>
+      <button class="btn danger" onclick="clearAll(); alert('Donnees prototype reinitialisees.');">Reset</button>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <h2>Espace Etudiant</h2>
+        <div class="hr"></div>
+        <a class="btn primary" href="login-student.html">Aller a l'espace Etudiant</a>
+      </div>
+
+      <div class="card">
+        <h2>Espace Admissions</h2>
+        <div class="hr"></div>
+        <a class="btn primary" href="login-admin.html">Aller a l'espace Admin</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

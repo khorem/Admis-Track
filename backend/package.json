@@ -1,0 +1,38 @@
+{
+  "name": "esiee-engagement-backend",
+  "version": "1.0.0",
+  "description": "Backend API (Node.js + Express + Prisma + MySQL) for ESIEE-IT engagement prototype",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "node prisma/seed.js",
+    "import:legacy": "node scripts/import-legacy.js",
+    "db:create:zip": "powershell -ExecutionPolicy Bypass -File ./scripts/create-db-from-zip.ps1"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+  "keywords": [
+    "node",
+    "express",
+    "prisma",
+    "mysql"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@prisma/client": "^6.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4",
+    "prisma": "^6.7.0"
+  }
+}

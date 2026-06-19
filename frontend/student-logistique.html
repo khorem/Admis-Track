@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Fiche logistique</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+  <script>
+    let CURRENT_P = null;
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      requireStudent();
+      const eventId = getParam("event") || localStorage.getItem("selectedEventId");
+      if(!eventId) return go("student-events.html");
+
+      await syncMyParticipations();
+      CURRENT_P = getParticipationByEvent(eventId);
+      if(!CURRENT_P) return go("student-events.html");
+
+      document.querySelector("#evt").textContent = `${CURRENT_P.event.title} - ${CURRENT_P.event.location}`;
+      document.querySelector("#departFrom").value = CURRENT_P.presence.departFrom || "";
+      document.querySelector("#departTime").value = CURRENT_P.presence.departTime || "";
+      document.querySelector("#transport").value = CURRENT_P.presence.transport || "Transports";
+      document.querySelector("#notes").value = CURRENT_P.presence.notes || "";
+    });
+
+    async function saveAndNext(){
+      if(!CURRENT_P) return;
+      try{
+        CURRENT_P = await savePresenceStep(CURRENT_P.id, {
+          present: CURRENT_P.presence.present || "non",
+          arrivedAt: CURRENT_P.presence.arrivedAt || "",
+          leftAt: CURRENT_P.presence.leftAt || "",
+          transport: document.querySelector("#transport").value,
+          departFrom: document.querySelector("#departFrom").value.trim(),
+          departTime: document.querySelector("#departTime").value.trim(),
+          notes: document.querySelector("#notes").value.trim(),
+          justificatifName: CURRENT_P.presence.justificatifName || "",
+          justificatifDataUrl: CURRENT_P.presence.justificatifDataUrl || "",
+          justificatifOwnerEmail: CURRENT_P.presence.justificatifOwnerEmail || CURRENT_P.student.email
+        });
+        go(`student-presence.html?event=${encodeURIComponent(CURRENT_P.event.id)}`);
+      }catch(err){
+        CURRENT_P.presence.departFrom = document.querySelector("#departFrom").value.trim();
+        CURRENT_P.presence.departTime = document.querySelector("#departTime").value.trim();
+        CURRENT_P.presence.transport = document.querySelector("#transport").value;
+        CURRENT_P.presence.notes = document.querySelector("#notes").value.trim();
+        upsertParticipationLocal(CURRENT_P);
+        if(String(err.message || "").toLowerCase().includes("debloquee")){
+          go(`student-presence.html?event=${encodeURIComponent(CURRENT_P.event.id)}`);
+          return;
+        }
+        alert(err.message || "Erreur lors de l'enregistrement de la logistique.");
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-logos">
+          <img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/>
+          <img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/>
+        </div>
+        <div>
+          <div class="h1">Fiche logistique</div>
+          <div class="muted" id="evt"></div>
+        </div>
+      </div>
+      <a class="btn ghost" href="student-events.html"><- Retour</a>
+    </div>
+
+    <div class="steps">
+      <div class="step">1. Evenements</div>
+      <div class="step">2. Inscription</div>
+      <div class="step active">3. Logistique</div>
+      <div class="step">4. Presence</div>
+      <div class="step">5. Defraiement</div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <label>Point de depart</label>
+      <input class="input" id="departFrom" placeholder="Ex: Domicile / Campus"/>
+
+      <label>Heure de depart estimee</label>
+      <input class="input" id="departTime" type="time" placeholder="Ex: 07:45"/>
+
+      <label>Moyen de transport prevu</label>
+      <select id="transport">
+        <option>Transports</option>
+        <option>Voiture</option>
+        <option>Covoiturage</option>
+      </select>
+
+      <label>Notes / besoins particuliers</label>
+      <textarea id="notes" rows="4" class="input" placeholder="Ex: besoin d'un badge, repas..."></textarea>
+
+      <div class="hr"></div>
+      <button class="btn primary" onclick="saveAndNext()">Valider puis passer a Presence</button>
+    </div>
+  </div>
+</body>
+</html>

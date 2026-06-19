@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Connexion etudiant</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", ()=>{
+      const profile = loadJSON("studentProfile", null);
+      const auth = loadJSON("studentAuth", null);
+      if(profile?.email) document.querySelector("#email").value = profile.email;
+      else if(auth?.email) document.querySelector("#email").value = auth.email;
+    });
+    async function doLogin(){
+      const email = document.querySelector("#email").value.trim();
+      if(!email) return alert("Veuillez saisir un email.");
+      try{
+        const out = await studentLogin(email);
+        if(out.requiresRegistration){
+          go("student-register.html");
+        }else{
+          go("student-events.html");
+        }
+      }catch(err){
+        alert(err.message || "Erreur de connexion etudiant.");
+      }
+    }
+    function goFirstRegistration(){
+      const email = document.querySelector("#email").value.trim();
+      if(!email) return alert("Veuillez saisir un email avant la premiere inscription.");
+      saveJSON("studentAuth", { email: email.toLowerCase() });
+      go("student-register.html");
+    }
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-logos">
+          <img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/>
+          <img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/>
+        </div>
+        <div>
+          <div class="h1">Connexion etudiant</div>
+        </div>
+      </div>
+      <a class="btn ghost" href="index.html">Accueil</a>
+    </div>
+
+    <div class="card">
+      <label>Email</label>
+      <input class="input" id="email" placeholder="Ex: awa.kone@edu.esiee-it.fr"/>
+
+      <div class="hr"></div>
+      <button class="btn primary" onclick="doLogin()">Se connecter</button>
+
+      <div class="hr"></div>
+      <button class="btn ghost" onclick="goFirstRegistration()">Acceder a la premiere inscription</button>
+    </div>
+  </div>
+</body>
+</html>

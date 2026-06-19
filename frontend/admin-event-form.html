@@ -1,0 +1,194 @@
+﻿<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin creation / modification evenement</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script defer src="app.js"></script>
+  <script>
+    let MODE = "create";
+    let EVT_ID = null;
+
+    window.addEventListener("DOMContentLoaded", async ()=>{
+      requireAdmin();
+      await syncEvents();
+      MODE = getParam("mode") || "create";
+      EVT_ID = getParam("event");
+
+      if(MODE === "edit" && EVT_ID){
+        const e = findEvent(EVT_ID);
+        if(!e) return go("admin-events.html");
+        document.querySelector("#h").textContent = "Modifier un evenement";
+        document.querySelector("#id").textContent = e.id;
+        document.querySelector("#type").value = e.type;
+        document.querySelector("#title").value = e.title;
+        document.querySelector("#date").value = e.date;
+        document.querySelector("#city").value = e.city;
+        document.querySelector("#location").value = e.location;
+        document.querySelector("#startTime").value = e.startTime || "";
+        document.querySelector("#endTime").value = e.endTime || "";
+        document.querySelector("#need").value = e.need;
+        document.querySelector("#cname").value = e.contact?.name || "";
+        document.querySelector("#cemail").value = e.contact?.email || "";
+        document.querySelector("#cphone").value = e.contact?.phone || "";
+        document.querySelector("#desc").value = e.description || "";
+      }else{
+        document.querySelector("#h").textContent = "Creer un evenement";
+        document.querySelector("#id").textContent = "(auto)";
+        document.querySelector("#date").value = todayISO();
+      }
+    });
+
+    async function saveEvent(){
+      const startTime = document.querySelector("#startTime").value;
+      const endTime = document.querySelector("#endTime").value;
+      const cemail = document.querySelector("#cemail").value.trim();
+      const cphone = document.querySelector("#cphone").value.trim();
+      const need = parseInt(document.querySelector("#need").value || "0",10) || 0;
+
+      const data = {
+        id: EVT_ID,
+        type: document.querySelector("#type").value,
+        title: document.querySelector("#title").value.trim(),
+        date: document.querySelector("#date").value,
+        city: document.querySelector("#city").value.trim(),
+        location: document.querySelector("#location").value.trim(),
+        startTime,
+        endTime,
+        hours: formatEventHours(startTime, endTime),
+        need,
+        contact: {
+          name: document.querySelector("#cname").value.trim(),
+          email: cemail,
+          phone: cphone,
+        },
+        description: document.querySelector("#desc").value.trim(),
+      };
+
+      if(!data.type || !data.title || !data.date || !data.city || !data.startTime || !data.endTime){
+        return alert("Veuillez remplir Type, Titre, Date, Ville, Heure debut et Heure fin.");
+      }
+      if(data.startTime >= data.endTime){
+        return alert("L'heure de fin doit etre strictement superieure a l'heure de debut.");
+      }
+      if(data.need <= 0){
+        return alert("Le nombre d'etudiants requis doit etre superieur a 0.");
+      }
+      if(cemail && !isValidEmail(cemail)){
+        return alert("Format email contact invalide.");
+      }
+      if(cphone && !isValidPhone(cphone)){
+        return alert("Format telephone contact invalide.");
+      }
+
+      try{
+        if(MODE === "create"){
+          await createEvent(data);
+          alert("Evenement cree.");
+        }else{
+          await updateEvent(EVT_ID, data);
+          alert("Evenement modifie.");
+        }
+        go("admin-events.html");
+      }catch(err){
+        alert(err.message || "Erreur lors de l'enregistrement de l'evenement.");
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-logos"><img class="logo-esiee" src="assets/logo-esiee.svg" alt="Logo ESIEE[it]"/><img class="logo-cf" src="assets/logo-coding-factory.svg" alt="Logo Coding Factory"/></div>
+        <div>
+          <div class="h1" id="h"></div>
+          <div class="muted">ID : <span id="id"></span></div>
+        </div>
+      </div>
+      <a class="btn ghost" href="admin-events.html">Retour</a>
+    </div>
+
+    <div class="card">
+      <div class="grid grid-2">
+        <div>
+          <label>Type d'evenement</label>
+          <select id="type">
+            <option>Forum</option>
+            <option>Salon</option>
+            <option>JPO</option>
+            <option>Intervention</option>
+            <option>Evenement ecole</option>
+            <option>Atelier</option>
+          </select>
+        </div>
+        <div>
+          <label>Titre</label>
+          <input class="input" id="title" placeholder="Ex: Salon de l'etudiant - Paris"/>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div>
+          <label>Date</label>
+          <input class="input" id="date" type="date"/>
+        </div>
+        <div></div>
+      </div>
+
+      <div class="grid grid-2">
+        <div>
+          <label>Heure de debut</label>
+          <input class="input" id="startTime" type="time"/>
+        </div>
+        <div>
+          <label>Heure de fin</label>
+          <input class="input" id="endTime" type="time"/>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div>
+          <label>Ville</label>
+          <input class="input" id="city" placeholder="Ex: Paris"/>
+        </div>
+        <div>
+          <label>Lieu</label>
+          <input class="input" id="location" placeholder="Ex: Porte de Versailles"/>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div>
+          <label>Nombre d'etudiants requis</label>
+          <input class="input" id="need" type="number" min="1" placeholder="Ex: 4"/>
+        </div>
+        <div>
+          <label>Contact sur place</label>
+          <input class="input" id="cname" placeholder="Nom du contact"/>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div>
+          <label>Email contact</label>
+          <input class="input" id="cemail" placeholder="contact@ecole.fr"/>
+        </div>
+        <div>
+          <label>Telephone contact</label>
+          <input class="input" id="cphone" placeholder="01 23 45 67 89"/>
+        </div>
+      </div>
+
+      <label>Description</label>
+      <textarea id="desc" rows="4" class="input" placeholder="Description / mission attendue..."></textarea>
+
+      <div class="hr"></div>
+      <button class="btn primary" onclick="saveEvent()">Enregistrer</button>
+    </div>
+  </div>
+</body>
+</html>
+
